@@ -12,6 +12,8 @@
     <script src="https://d3js.org/d3-array.v2.min.js"></script>
     <script src="https://d3js.org/d3-geo.v2.min.js"></script>
     <script src="https://d3js.org/d3-geo-projection.v3.min.js"></script>
+
+    <script src="https://d3js.org/d3-voronoi.v1.min.js"></script>
 </head>>
 
 <body>
@@ -63,7 +65,42 @@
             // .attr("cx", d => d.x)
             // .attr("cy", d => d.y)
 
-            g.selectAll("circle")
+            // https://observablehq.com/@mbostock/u-s-airports-voronoi
+            // Voronoi cells
+            var voronoi = d3.voronoi() //.extent([0,0], [width, height])
+            voronoi.x((d) => d.latitude)
+            voronoi.y((d) => d.longitude)
+
+            var polys = voronoi(stationData).polygons()
+            console.log("polys: ", polys)
+            var cellG = svg.append("g")
+                .attr("fill", "none")
+                .attr("stroke", "red")
+                .attr("pointer-events", "all");
+
+            cellG.selectAll("path")
+                .data(polys)
+                .enter()
+                .append("path")
+                .attr("d", polygonF)
+                // .attr("d", d3.geoPath(albersProjection))
+
+
+            function polygonF(d) {
+                console.log("d: ",d)
+
+                d = d.filter(v => v != null)
+
+                let p = d.map(v => {
+                    return albersProjection([v[1], v[0]]) 
+                })
+                console.log("p: ", p)
+                // let p = albersProjection([d[1], d[0]])
+                // console.log(p)
+                return "M" + p.join("L") + "Z";
+            }
+
+            cellG.selectAll("circle")
                 .data(stationData)
                 .enter()
                 .append('circle')
@@ -71,6 +108,19 @@
                 .attr("transform", function (d) {
                     return "translate(" + albersProjection([d.longitude, d.latitude]) + ")"
                 })
+
+
+            // svg.append("g")
+            //     .attr("fill", "none")
+            //     .attr("stroke", "red")
+            //     .attr("pointer-events", "all")
+            // .selectAll("path")
+            // .data(v.polygons(stationData).features)
+            // .enter()
+            // .append("path")
+            //     .attr("d", d3.geoPath(albersProjection))
+
+
 
 
             // g.selectAll("circle")
