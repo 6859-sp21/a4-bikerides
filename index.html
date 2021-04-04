@@ -1,0 +1,98 @@
+<!-- Starter code and data adapted from http://duspviz.mit.edu/d3-workshop/mapping-data-with-d3/ -->
+<html>
+
+<head>
+    <title>A Basic D3 map</title>
+    <script src="http://d3js.org/d3.v4.js" charset="utf-8"></script>
+
+    <script src="data/boston_neighborhoods.json"></script>
+    <script src="data/201903-bluebikes-tripdata.csv"></script>
+    <script src="process_data.js"></script>
+
+    <script src="https://d3js.org/d3-array.v2.min.js"></script>
+    <script src="https://d3js.org/d3-geo.v2.min.js"></script>
+    <script src="https://d3js.org/d3-geo-projection.v3.min.js"></script>
+</head>>
+
+<body>
+    <script>
+        console.log("Running javascript.")
+
+        var width = 700;
+        var height = 580;
+
+
+        var svg = d3.select("body")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        var g = svg.append("g");
+
+        var albersProjection = d3.geoAlbers()
+            .scale(190000)
+            .rotate([71.057, 0])
+            .center([0, 42.313])
+            .translate([width / 2, height / 2]);
+
+        var geoPath = d3.geoPath()
+            .projection(albersProjection);
+
+        g.selectAll("path")
+            .data(neighborhoods_json.features)
+            .enter()
+            .append("path")
+            .attr("fill", "#ccc")
+            .attr("stroke", "#333")
+            .attr("d", geoPath);
+
+        // Load Bluebike station data
+        d3.queue()
+            .defer(d3.csv, "https://raw.githubusercontent.com/6859-sp21/a4-bikerides/main/bluebikes_2020_stations.csv")
+            .await(ready)
+
+        function ready(error, stationData) {
+            console.log("ready() called")
+            console.log("stationData: ", stationData)
+
+            // g.selectAll("circle")
+            // .data([{ x: 50, y: 50 }])
+            // .enter()
+            // .append('circle')
+            // .attr("r", 25)
+            // .attr("cx", d => d.x)
+            // .attr("cy", d => d.y)
+
+            g.selectAll("circle")
+                .data(stationData)
+                .enter()
+                .append('circle')
+                .attr("r", 2)
+                .attr("transform", function (d) {
+                    return "translate(" + albersProjection([d.longitude, d.latitude]) + ")"
+                })
+
+
+            // g.selectAll("circle")
+            //     .data([{ latitude: "42.387151", longitude: "-71.075978", "station id": "1", "station name": "18 Dorrance Warehouse" },
+            //     { x: 50, y: 50, latitude: "42.267902", longitude: "-71.093641" }])
+            //     .enter()
+            //     .append('circle')
+            //     .attr("r", 10)
+            //     .attr("transform", function (d) {
+            //         return "translate(" + albersProjection([d.longitude, d.latitude]) + ")"
+            //     })
+
+            // svg.selectAll('.station')
+            //     .data(stationData)
+            //     .join('circle')
+            //         .attr("transform", function(d) {
+            //             return "translate(" + albersProjection([d.longitude, d.latitude]) + ")"
+            //         })
+
+        }
+
+    </script>
+</body>
+
+</html>
