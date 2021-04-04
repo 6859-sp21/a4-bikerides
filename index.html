@@ -72,6 +72,16 @@
             voronoi.y((d) => d.longitude)
 
             var polys = voronoi(stationData).polygons()
+
+            polys = polys.map((v, i) => {
+                let metadata = stationData[i]
+                return {
+                    poly: v,
+                    metadata: metadata,
+                }
+            })
+
+
             console.log("polys: ", polys)
             var cellG = svg.append("g")
                 .attr("fill", "none")
@@ -83,18 +93,30 @@
                 .enter()
                 .append("path")
                 .attr("d", polygonF)
+                .attr("fill", getStationColor)
                 // .attr("d", d3.geoPath(albersProjection))
 
+            function getStationColor(d) {
+                // TODO: replace with trip value
+                let value = d.metadata["station id"]
+                let pct = value / 250.0
+                pct = Math.min(pct, 1.0)
+                // return "rgb(30,30,30)"
+                console.log(`hsl(36, ${pct * 100}%, 63%)`)
+                return `hsl(36, ${pct * 100}%, 63%)`
+            }
 
             function polygonF(d) {
-                console.log("d: ",d)
+                d = d.poly
+
+                // console.log("d: ",d)
 
                 d = d.filter(v => v != null)
 
                 let p = d.map(v => {
                     return albersProjection([v[1], v[0]]) 
                 })
-                console.log("p: ", p)
+                // console.log("p: ", p)
                 // let p = albersProjection([d[1], d[0]])
                 // console.log(p)
                 return "M" + p.join("L") + "Z";
