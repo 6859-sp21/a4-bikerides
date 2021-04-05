@@ -71,8 +71,84 @@
     <script>
         // ALL FUNCTION DEFINTIONS
 
+        // Global variables
+        var stationData, tripsData
+        var stationDataMap = new Map()
+        var timeSliceData
+
         function onSlider(val) {
             console.log("Slider changed: ", val)
+            d3JoinData(stationData, tripsData, stationDataMap)
+        }
+
+        function d3JoinData(stationData, tripsData, stationDataMap) {
+            console.log("d3JoinData() called.")
+            // https://observablehq.com/@mbostock/u-s-airports-voronoi
+            // TODO: don't recompute voronoi each time
+            // Voronoi cells
+            var voronoi = d3.voronoi() //.extent([0,0], [width, height])
+            voronoi.x((d) => d.latitude)
+            voronoi.y((d) => d.longitude)
+
+            var polys = voronoi(stationData).polygons()
+
+            polys = polys.map((v, i) => {
+                let metadata = stationData[i]
+                return {
+                    poly: v,
+                    metadata: metadata,
+                }
+            })
+
+            console.log("polys: ", polys)
+
+            // Grab heatmap SVG group and set attributes
+            var gHeatmap = d3.select("#heatmap")
+                .attr("fill", "none")
+                .attr("stroke", "red")
+                .attr("pointer-events", "all");
+
+            gHeatmap.selectAll("path")
+                .data(polys)
+                .enter()
+                .append("path")
+                .attr("d", polygonF)
+                .attr("fill", getStationColor)
+            // .attr("d", d3.geoPath(albersProjection))
+
+            var maxStationID = 446
+
+            var minNetIncoming = Math.max(...stationData.map(v => v.netincoming))
+            var maxNetIncoming = Math.min(...stationData.map(v => v.netincoming))
+            console.log("minNetIncoming: ", minNetIncoming)
+            console.log("maxNetIncoming: ", maxNetIncoming)
+
+
+            function getStationColor(d) {
+                // TODO: replace with trip value
+                let stationID = d.metadata["station id"]
+                let stationData = stationDataMap.get(stationID)
+                console.log("sid: ", stationID)
+                let colorValue = stationData["netincoming"]
+                // console.log("raw color value: ", colorValue)
+                let pct = stationID / 446
+                // let pct = (colorValue - minNetIncoming) / (maxNetIncoming - minNetIncoming)
+
+                pct = Math.min(pct, 1.0)
+                console.log("pct: ", pct)
+                return `hsla(36, ${pct * 100}%, 63%, 0.5)`
+            }
+
+            function polygonF(d) {
+                d = d.poly
+                d = d.filter(v => v != null)
+
+                let p = d.map(v => {
+                    return albersProjection([v[1], v[0]])
+                })
+                return "M" + p.join("L") + "Z";
+            }
+
         }
 
         function computeStationTraffic(stationData, tripsData) {
@@ -141,7 +217,7 @@
 
             sortedEndTimeTrips = tripsData.sort((a, b) => a["stoptime"] < b["stoptime"])
             console.log("sortedEndTimeTrips: ", sortedEndTimeTrips)
-            
+
             currentSliceStart = earliestStartTime
             // TODO: end time trip bucketing gives weirdly clustered bucket assignments. should investigate
             sortedEndTimeTrips.forEach(v => {
@@ -156,89 +232,34 @@
                 sliceData["tripsEnding"].push(v)
             })
             console.log("SLICE MAP: ", sliceMap)
+
+            return sliceMap
         }
 
-        function onDataLoad(error, stationData, tripsData) {
+        function onDataLoad(error, loadedStationData, loadedTripsData) {
             console.log("ready() called")
-            console.log("stationData: ", stationData)
+            console.log("stationData: ", loadedStationData)
 
             // TODO: testing
-            createTimeSliceData(tripsData.slice(0, 5000), 30)
-            return
-            computeStationTraffic(stationData, tripsData)
-            console.log("tripsData[0]: ", tripsData[0])
+            timeSliceData = createTimeSliceData(loadedTripsData.slice(0, 5000), 30)
+            computeStationTraffic(loadedStationData, loadedTripsData)
+            console.log("tripsData[0]: ", loadedTripsData[0])
 
             // convert stationData to a id -> data map
-            var stationDataMap = new Map()
 
-            stationData.forEach(v => {
+            loadedStationData.forEach(v => {
                 stationDataMap.set(v["station id"], v)
             });
             console.log(stationDataMap)
 
-            var maxStationID = 446
-
-            var minNetIncoming = Math.max(...stationData.map(v => v.netincoming))
-            var maxNetIncoming = Math.min(...stationData.map(v => v.netincoming))
-            console.log("minNetIncoming: ", minNetIncoming)
-            console.log("maxNetIncoming: ", maxNetIncoming)
-
-            // https://observablehq.com/@mbostock/u-s-airports-voronoi
-            // Voronoi cells
-            var voronoi = d3.voronoi() //.extent([0,0], [width, height])
-            voronoi.x((d) => d.latitude)
-            voronoi.y((d) => d.longitude)
-
-            var polys = voronoi(stationData).polygons()
-
-            polys = polys.map((v, i) => {
-                let metadata = stationData[i]
-                return {
-                    poly: v,
-                    metadata: metadata,
-                }
-            })
-
-            console.log("polys: ", polys)
-            var cellG = svg.append("g")
+            var gStations = d3.select("#stations")
                 .attr("fill", "none")
                 .attr("stroke", "red")
                 .attr("pointer-events", "all");
 
-            cellG.selectAll("path")
-                .data(polys)
-                .enter()
-                .append("path")
-                .attr("d", polygonF)
-                .attr("fill", getStationColor)
-            // .attr("d", d3.geoPath(albersProjection))
-
-            function getStationColor(d) {
-                // TODO: replace with trip value
-                let stationID = d.metadata["station id"]
-                let stationData = stationDataMap.get(stationID)
-                // console.log("sd: ", stationData)
-                let colorValue = stationData["netincoming"]
-                // console.log("raw color value: ", colorValue)
-                let pct = stationID / maxStationID
-                // let pct = (colorValue - minNetIncoming) / (maxNetIncoming - minNetIncoming)
-
-                pct = Math.min(pct, 1.0)
-                return `hsl(36, ${pct * 100}%, 63%)`
-            }
-
-            function polygonF(d) {
-                d = d.poly
-                d = d.filter(v => v != null)
-
-                let p = d.map(v => {
-                    return albersProjection([v[1], v[0]])
-                })
-                return "M" + p.join("L") + "Z";
-            }
-
-            cellG.selectAll("circle")
-                .data(stationData)
+            // Plot station locations
+            gStations.selectAll("circle")
+                .data(loadedStationData)
                 .enter()
                 .append('circle')
                 .attr("r", 2)
@@ -246,8 +267,10 @@
                     return "translate(" + albersProjection([d.longitude, d.latitude]) + ")"
                 })
 
+            stationData = loadedStationData
+            tripsData = loadedTripsData
 
-
+            d3JoinData(stationData, tripsData, stationDataMap)
         }
 
 
@@ -266,7 +289,15 @@
             .attr("width", width)
             .attr("height", height);
 
-        var g = svg.append("g");
+        var gMap = svg.append("g")
+            .attr("id", "map");
+
+        // Set up other SVG groups now
+        svg.append("g")
+            .attr("id", "stations")
+            
+        svg.append("g")
+            .attr("id", "heatmap")
 
         var albersProjection = d3.geoAlbers()
             .scale(190000)
@@ -277,7 +308,7 @@
         var geoPath = d3.geoPath()
             .projection(albersProjection);
 
-        g.selectAll("path")
+        gMap.selectAll("path")
             .data(neighborhoods_json.features)
             .enter()
             .append("path")
