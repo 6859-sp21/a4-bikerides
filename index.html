@@ -57,13 +57,7 @@
             console.log("ready() called")
             console.log("stationData: ", stationData)
 
-            // g.selectAll("circle")
-            // .data([{ x: 50, y: 50 }])
-            // .enter()
-            // .append('circle')
-            // .attr("r", 25)
-            // .attr("cx", d => d.x)
-            // .attr("cy", d => d.y)
+            var maxStationID = 446
 
             // https://observablehq.com/@mbostock/u-s-airports-voronoi
             // Voronoi cells
@@ -99,7 +93,7 @@
             function getStationColor(d) {
                 // TODO: replace with trip value
                 let value = d.metadata["station id"]
-                let pct = value / 250.0
+                let pct = value / maxStationID
                 pct = Math.min(pct, 1.0)
                 // return "rgb(30,30,30)"
                 console.log(`hsl(36, ${pct * 100}%, 63%)`)
@@ -108,17 +102,11 @@
 
             function polygonF(d) {
                 d = d.poly
-
-                // console.log("d: ",d)
-
                 d = d.filter(v => v != null)
 
                 let p = d.map(v => {
                     return albersProjection([v[1], v[0]]) 
                 })
-                // console.log("p: ", p)
-                // let p = albersProjection([d[1], d[0]])
-                // console.log(p)
                 return "M" + p.join("L") + "Z";
             }
 
@@ -130,38 +118,6 @@
                 .attr("transform", function (d) {
                     return "translate(" + albersProjection([d.longitude, d.latitude]) + ")"
                 })
-
-
-            // svg.append("g")
-            //     .attr("fill", "none")
-            //     .attr("stroke", "red")
-            //     .attr("pointer-events", "all")
-            // .selectAll("path")
-            // .data(v.polygons(stationData).features)
-            // .enter()
-            // .append("path")
-            //     .attr("d", d3.geoPath(albersProjection))
-
-
-
-
-            // g.selectAll("circle")
-            //     .data([{ latitude: "42.387151", longitude: "-71.075978", "station id": "1", "station name": "18 Dorrance Warehouse" },
-            //     { x: 50, y: 50, latitude: "42.267902", longitude: "-71.093641" }])
-            //     .enter()
-            //     .append('circle')
-            //     .attr("r", 10)
-            //     .attr("transform", function (d) {
-            //         return "translate(" + albersProjection([d.longitude, d.latitude]) + ")"
-            //     })
-
-            // svg.selectAll('.station')
-            //     .data(stationData)
-            //     .join('circle')
-            //         .attr("transform", function(d) {
-            //             return "translate(" + albersProjection([d.longitude, d.latitude]) + ")"
-            //         })
-
         }
 
     </script>
