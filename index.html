@@ -20,9 +20,9 @@
     <script>
         console.log("Running javascript.")
 
+        // Set up SVG 'canvas' with Boston map background
         var width = 700;
         var height = 580;
-
 
         var svg = d3.select("body")
             .append("svg")
@@ -51,13 +51,38 @@
         // Load Bluebike station data
         d3.queue()
             .defer(d3.csv, "https://raw.githubusercontent.com/6859-sp21/a4-bikerides/main/bluebikes_2020_stations.csv")
+            .defer(d3.csv, "https://raw.githubusercontent.com/6859-sp21/a4-bikerides/main/bluebikes_2020.csv")
             .await(ready)
 
-        function ready(error, stationData) {
+        function computeStationTraffic(stationData, tripsData) {
+            stationData.forEach(function (d) {
+                d.arrivals = tripsData.filter(trip => (trip['end station id'] == d['station id'])).length;
+                d.departures = tripsData.filter(trip => (trip['start station id'] == d['station id'])).length;
+                d.netincoming = d.arrivals - d.departures
+                console.log(d['station id'], d.arrivals, d.departures);
+            })
+        }
+
+
+        function ready(error, stationData, tripsData) {
             console.log("ready() called")
+            computeStationTraffic(stationData, tripsData)
             console.log("stationData: ", stationData)
 
+            // convert stationData to a id -> data map
+            var stationDataMap = new Map()
+
+            stationData.forEach(v => {
+                stationDataMap.set(v["station id"], v)
+            });
+            console.log(stationDataMap)
+
             var maxStationID = 446
+
+            var minNetIncoming = Math.max(...stationData.map(v => v.netincoming))
+            var maxNetIncoming = Math.min(...stationData.map(v => v.netincoming))
+            console.log("minNetIncoming: ", minNetIncoming)
+            console.log("maxNetIncoming: ", maxNetIncoming)
 
             // https://observablehq.com/@mbostock/u-s-airports-voronoi
             // Voronoi cells
@@ -75,7 +100,6 @@
                 }
             })
 
-
             console.log("polys: ", polys)
             var cellG = svg.append("g")
                 .attr("fill", "none")
@@ -88,15 +112,19 @@
                 .append("path")
                 .attr("d", polygonF)
                 .attr("fill", getStationColor)
-                // .attr("d", d3.geoPath(albersProjection))
+            // .attr("d", d3.geoPath(albersProjection))
 
             function getStationColor(d) {
                 // TODO: replace with trip value
-                let value = d.metadata["station id"]
-                let pct = value / maxStationID
+                let stationID = d.metadata["station id"]
+                let stationData = stationDataMap.get(stationID)
+                // console.log("sd: ", stationData)
+                let colorValue = stationData["netincoming"]
+                // console.log("raw color value: ", colorValue)
+                let pct = stationID / maxStationID
+                // let pct = (colorValue - minNetIncoming) / (maxNetIncoming - minNetIncoming)
+
                 pct = Math.min(pct, 1.0)
-                // return "rgb(30,30,30)"
-                console.log(`hsl(36, ${pct * 100}%, 63%)`)
                 return `hsl(36, ${pct * 100}%, 63%)`
             }
 
@@ -105,7 +133,7 @@
                 d = d.filter(v => v != null)
 
                 let p = d.map(v => {
-                    return albersProjection([v[1], v[0]]) 
+                    return albersProjection([v[1], v[0]])
                 })
                 return "M" + p.join("L") + "Z";
             }
