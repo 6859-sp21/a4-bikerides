@@ -76,8 +76,8 @@
             var map = new mapboxgl.Map({
                container: 'map-container',
                style: 'mapbox://styles/mapbox/light-v10',
-               center: [-71.0589,42.3601],
-               zoom: 12,
+               center: [-71.0942,42.3601],
+               zoom: 12.5,
                minZoom: 12,
                maxZoom: 15,
             });
@@ -109,8 +109,7 @@
                   .style("opacity", 0);
                
                function clearSelections() {
-                  d3.selectAll("circle").classed("selected", false)
-                     .transition().attr("stroke","#3388ff").attr("stroke-width", 1).attr("fill-opacity", .3);
+                  d3.selectAll("circle").classed("selected", false).attr("stroke","#3388ff").attr("stroke-width", 1).attr("fill-opacity", 0.3);
                }
                  
                circleMarker = svg
@@ -129,10 +128,11 @@
                   .on("mouseover", function(d) {
                        d3.select(this).attr("stroke", "black")
                         .attr("stroke-width", 3)
-                        .attr("fill-opacity", .8);
+                        //.attr("fill-opacity", .8);
                   })
                   .on("mousemove", function(event, d) {
                       {
+                           d3.select(this).style("cursor", "pointer");
                             if (!d3.select(this).classed("selected") ){
                             var tooltipText ;
                             if (selectedStation == null) {
@@ -176,7 +176,7 @@
                         updateMarkersStationTraffic();
                        d3.select(this).classed("selected", true);
                        selectedStation = d['station name'];
-                       d3.select(this).transition().attr("stroke","black").attr("stroke-width", 3);
+                       d3.select(this).attr("stroke","black").attr("stroke-width", 3).attr("fill-opacity", 0.8);
                         tooltip.transition()
                         .duration(0)
                         .style("opacity", 0);
@@ -184,7 +184,7 @@
                     }else{
                        d3.select(this).classed("selected", false);
                        selectedStation = null;
-                       d3.select(this).transition().attr("stroke","#3388ff");
+                       d3.select(this).attr("stroke","#3388ff").attr("stroke-width", 1);
                        updateMarkersTotalTraffic();
                     }
                    })
@@ -274,7 +274,7 @@
                     .domain([0, 1000])
                     .range([0, 10]);
                   newRadius = scaleRadius(d.arrivals + d.departures) ;
-                  d3.select("#station-"+d['station id']).attr("r", newRadius);
+                  d3.select("#station-"+d['station id']).transition().duration(1000).attr("r", newRadius);
 
               })
             }
@@ -289,7 +289,7 @@
                   if (isNaN(newRadius) )
                      newRadius = 0;
                   //console.log(d['station id'], d.specificArrivals, d.specificDepartures);
-                  d3.select("#station-"+d['station id']).attr("r", newRadius);
+                  d3.select("#station-"+d['station id']).transition().duration(1000).attr("r", newRadius);
 
               })
             }
