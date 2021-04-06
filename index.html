@@ -38,36 +38,50 @@
     <h1>world</h1>
 
     <script>
-        // Simple
-        // https://bl.ocks.org/johnwalley/e1d256b81e51da68f7feb632a53c3518
-        var data = [...Array(20).keys()];
 
-        var sliderSimple = d3
-            .sliderBottom()
-            .min(d3.min(data))
-            .max(d3.max(data))
-            .width(300)
-            .step(1)
-            // .tickFormat(d3.format('.2%'))
-            .ticks(data.length - 1)
-            .default(0.015)
-            .on('onchange', val => {
-                onSlider(val)
-                d3.select('p#value-simple').text(d3.format('.1')(val));
-            });
+        function initializeSlider(timeSliceData) {
+            // Simple
+            // https://bl.ocks.org/johnwalley/e1d256b81e51da68f7feb632a53c3518
+            var data = timeSliceData.map((val, idx)  => idx)
+            console.log("slider data: ", data)
+            var sliderSimple = d3
+                .sliderBottom()
+                .min(d3.min(data))
+                .max(d3.max(data))
+                .width(600)
+                .step(1)
+                .tickFormat(idx => {
+                    console.log("inside tickFormat")
+                    console.log(idx)
+                    let date = new Date(timeSliceData[idx][0] * 1000)
+                    console.log("hours: ",date.getHours())
+                    return d3.timeFormat("%I %p")(date)
+                })
+                .ticks(data.length - 1)
+                .default(0)
+                .on('onchange', idx => {
+                    onSlider(idx)
 
-        var gSimple = d3
-            .select('div#slider-simple')
-            .append('svg')
-            .attr('width', 500)
-            .attr('height', 100)
-            .append('g')
-            .attr('transform', 'translate(30,30)');
+                    let sumTrips = 0
+                    timeSliceData[idx][1].forEach((value, key) => {
+                        sumTrips += value
+                    })
 
-        gSimple.call(sliderSimple);
-
-        d3.select('p#value-simple').text(d3.format('.1')(sliderSimple.value()));
-
+                    d3.select('p#value-simple').text(sumTrips + " trips.");
+                });
+    
+            var gSimple = d3
+                .select('div#slider-simple')
+                .append('svg')
+                .attr('width', 800)
+                .attr('height', 100)
+                .append('g')
+                .attr('transform', 'translate(30,30)');
+    
+            gSimple.call(sliderSimple);
+    
+            d3.select('p#value-simple').text(d3.format('.1')(sliderSimple.value()));
+        }
     </script>
 
 
@@ -76,7 +90,8 @@
 
         // Constants
         const TIME_SLICE_DURATION = 120 // in minutes
-        const NUM_TRIPS_TO_USE = 5000 // number of trips to use from the dataset
+        const NUM_TRIPS_TO_USE = 20000 // number of trips to use from the dataset
+        const NUM_SLICES = 12
 
         // Global variables
         var stationData, tripsData
@@ -85,7 +100,6 @@
         var voronoi, voronoiPolys
 
         function onSlider(val) {
-            val = Math.round(val)
             console.log("Slider changed: ", val)
 
             let sliceData = timeSliceData[val][1]
@@ -103,7 +117,7 @@
             // Grab heatmap SVG group and set attributes
             var gHeatmap = d3.select("#heatmap")
                 .attr("fill", "none")
-                .attr("stroke", "red")
+                // .attr("stroke", "red")
                 .attr("pointer-events", "all");
 
             gHeatmap.selectAll("path")
@@ -135,10 +149,10 @@
                     colorValue = 0
                 }
 
-                let pct = colorValue / 5
+                let pct = colorValue / 20
 
                 pct = Math.min(pct, 1.0)
-                return `hsla(36, ${pct * 100}%, 63%, 0.5)`
+                return `hsla(36, ${pct * 100}%, 63%, 0.9)`
             }
 
             function polygonF(d) {
@@ -166,7 +180,7 @@
         // Given the a subset of the raw trip-level dataset, calculate aggregate metrics for time slices of the 
         // specified duration
         // @param: sliceDuration - duration of a slice in minutes
-        function createTimeSliceData(tripsData, sliceDuration) {
+        function createTimeSliceData(tripsData, sliceDuration, numSlices) {
             console.log("Calculating time slice data...")
 
             var sliceDurationSeconds = sliceDuration * 60
@@ -254,12 +268,16 @@
                 finalStationValues.set(key, stationValuesForSlice)
             })
 
-            console.log("FINAL STATION VALUES: ", finalStationValues)
-
+            
             finalStationValues = Array.from(finalStationValues, ([key, value]) => [key, value])
-
             finalStationValues.sort((a,b) => a[0] < b[0])
+            
+            finalStationValues = finalStationValues.slice(0, numSlices)
+
+            console.log("FINAL STATION VALUES: ", finalStationValues)
             console.log("Done calculating time slice data...")
+
+
 
             return finalStationValues
         }
@@ -290,7 +308,7 @@
                 })
 
 
-            timeSliceData = createTimeSliceData(loadedTripsData.slice(0, NUM_TRIPS_TO_USE), TIME_SLICE_DURATION)
+            timeSliceData = createTimeSliceData(loadedTripsData.slice(0, NUM_TRIPS_TO_USE), TIME_SLICE_DURATION, NUM_SLICES)
             computeStationTraffic(loadedStationData, loadedTripsData)
 
             // Voronoi cells
@@ -312,6 +330,9 @@
 
             stationData = loadedStationData
             tripsData = loadedTripsData
+
+            console.log("timeSliceData passed to intiializeSlider: ", timeSliceData)
+            initializeSlider(timeSliceData)
 
             d3JoinData(stationData, timeSliceData[0][1], stationDataMap)
         }
@@ -362,7 +383,8 @@
         // Load Bluebike station data asynchronously
         var files = []
         files.push("https://raw.githubusercontent.com/6859-sp21/a4-bikerides/main/bluebikes_2020_stations.csv")
-        files.push("https://raw.githubusercontent.com/6859-sp21/a4-bikerides/main/bluebikes_2020.csv")
+        // files.push("https://raw.githubusercontent.com/6859-sp21/a4-bikerides/main/bluebikes_2020.csv")
+        files.push("https://raw.githubusercontent.com/6859-sp21/a4-bikerides/bdnwang-voronoi/data/201909-bluebikes-tripdata.csv")
 
         var promises = []
 
