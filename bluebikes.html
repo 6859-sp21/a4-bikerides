@@ -359,10 +359,10 @@
 
    <script>
       // Set up other SVG groups now
-      svg.append("g")
+      svg.insert("g", ":first-child")
          .attr("id", "stations")
 
-      svg.append("g")
+      svg.insert("g", ":first-child")
          .attr("id", "heatmap")
 
       // Load the Bluebike dataset
