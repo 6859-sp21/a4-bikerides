@@ -3,7 +3,8 @@
 
 <head>
     <title>A Basic D3 map</title>
-    <script src="http://d3js.org/d3.v4.js" charset="utf-8"></script>
+    <!-- <script src="http://d3js.org/d3.v4.js" charset="utf-8"></script> -->
+    <script src="https://d3js.org/d3.v6.min.js"></script>
 
     <script src="data/boston_neighborhoods.json"></script>
     <script src="data/201903-bluebikes-tripdata.csv"></script>
@@ -12,6 +13,7 @@
     <script src="https://d3js.org/d3-array.v2.min.js"></script>
     <script src="https://d3js.org/d3-geo.v2.min.js"></script>
     <script src="https://d3js.org/d3-geo-projection.v3.min.js"></script>
+    <script src="https://d3js.org/d3-queue.v3.min.js"></script>
 
     <script src="https://d3js.org/d3-voronoi.v1.min.js"></script>
 
@@ -45,6 +47,7 @@
             .min(d3.min(data))
             .max(d3.max(data))
             .width(300)
+            .step(1)
             // .tickFormat(d3.format('.2%'))
             .ticks(data.length - 1)
             .default(0.015)
@@ -75,64 +78,69 @@
         var stationData, tripsData
         var stationDataMap = new Map()
         var timeSliceData
+        var voronoi, voronoiPolys
 
         function onSlider(val) {
+            val = Math.round(val)
             console.log("Slider changed: ", val)
-            d3JoinData(stationData, tripsData, stationDataMap)
+
+            let tripsForSlice = timeSliceData[val]["tripsStarting"]
+            console.log("trips for slice: ", tripsForSlice)
+
+            d3JoinData(stationData, tripsForSlice, stationDataMap)
         }
 
         function d3JoinData(stationData, tripsData, stationDataMap) {
             console.log("d3JoinData() called.")
             // https://observablehq.com/@mbostock/u-s-airports-voronoi
             // TODO: don't recompute voronoi each time
-            // Voronoi cells
-            var voronoi = d3.voronoi() //.extent([0,0], [width, height])
-            voronoi.x((d) => d.latitude)
-            voronoi.y((d) => d.longitude)
-
-            var polys = voronoi(stationData).polygons()
-
-            polys = polys.map((v, i) => {
-                let metadata = stationData[i]
-                return {
-                    poly: v,
-                    metadata: metadata,
-                }
-            })
-
-            console.log("polys: ", polys)
-
             // Grab heatmap SVG group and set attributes
             var gHeatmap = d3.select("#heatmap")
                 .attr("fill", "none")
                 .attr("stroke", "red")
                 .attr("pointer-events", "all");
 
+            console.log("voronoi polys: ", voronoiPolys)
+
             gHeatmap.selectAll("path")
-                .data(polys)
+                .data(voronoiPolys)
                 .enter()
                 .append("path")
                 .attr("d", polygonF)
                 .attr("fill", getStationColor)
-            // .attr("d", d3.geoPath(albersProjection))
+                .attr("d", d3.geoPath(albersProjection))
+
+
+            // gHeatmap.selectAll("path")
+            //     .data(voronoiPolys)
+            //     .join(
+            //         enter => enter
+            //             .append("path")
+            //             .attr("d", polygonF)
+            //             .attr("fill", getStationColor)
+            //             .attr("d", d3.geoPath(albersProjection)),
+            //         update => update
+            //             .attr("fill", getStationColor),
+            //         exit => exit.remove()
+            //     )
 
             var maxStationID = 446
 
-            var minNetIncoming = Math.max(...stationData.map(v => v.netincoming))
-            var maxNetIncoming = Math.min(...stationData.map(v => v.netincoming))
-            console.log("minNetIncoming: ", minNetIncoming)
-            console.log("maxNetIncoming: ", maxNetIncoming)
+            // var minNetIncoming = Math.max(...stationData.map(v => v.netincoming))
+            // var maxNetIncoming = Math.min(...stationData.map(v => v.netincoming))
+            // console.log("minNetIncoming: ", minNetIncoming)
+            // console.log("maxNetIncoming: ", maxNetIncoming)
 
 
             function getStationColor(d) {
                 // TODO: replace with trip value
                 let stationID = d.metadata["station id"]
                 let stationData = stationDataMap.get(stationID)
-                console.log("sid: ", stationID)
-                let colorValue = stationData["netincoming"]
+                // let colorValue = tripsData.filter(v => v["end station id"] == stationID).length
+                let colorValue = tripsData.length
                 // console.log("raw color value: ", colorValue)
-                let pct = stationID / 446
-                // let pct = (colorValue - minNetIncoming) / (maxNetIncoming - minNetIncoming)
+                // let pct = stationID / 446
+                let pct = colorValue / 50
 
                 pct = Math.min(pct, 1.0)
                 console.log("pct: ", pct)
@@ -152,19 +160,20 @@
         }
 
         function computeStationTraffic(stationData, tripsData) {
+            console.log("Computing station traffic...")
             stationData.forEach(function (d) {
                 d.arrivals = tripsData.filter(trip => (trip['end station id'] == d['station id'])).length;
                 d.departures = tripsData.filter(trip => (trip['start station id'] == d['station id'])).length;
                 d.netincoming = d.arrivals - d.departures
-                console.log(d['station id'], d.arrivals, d.departures);
             })
+            console.log("Done computing station traffic...")
         }
 
         // Given the a subset of the raw trip-level dataset, calculate aggregate metrics for time slices of the 
         // specified duration
         // @param: sliceDuration - duration of a slice in minutes
         function createTimeSliceData(tripsData, sliceDuration) {
-            console.log("createTimeSlice: tripsData: ", tripsData)
+            console.log("Calculating time slice data...")
 
             var sliceDurationSeconds = sliceDuration * 60
 
@@ -191,7 +200,6 @@
             })
 
             for (let i = earliestStartTime; i < latestEndTime; i += sliceDurationSeconds) {
-                console.log(i)
                 sliceMap.set(i, { startTime: i, endTime: i + sliceDurationSeconds, tripsStarting: [], tripsEnding: [] })
             }
 
@@ -211,7 +219,6 @@
                 }
 
                 let sliceData = sliceMap.get(currentSliceStart)
-                console.log("pushing start trip to: ", currentSliceStart)
                 sliceData["tripsStarting"].push(v)
             })
 
@@ -228,23 +235,19 @@
                 }
 
                 let sliceData = sliceMap.get(currentSliceStart)
-                console.log("pushing end trip to: ", currentSliceStart)
                 sliceData["tripsEnding"].push(v)
             })
             console.log("SLICE MAP: ", sliceMap)
 
-            return sliceMap
+            sliceArray = Array.from(sliceMap, ([key, value]) => value)
+
+            console.log("Done calculating time slice data...")
+
+            return sliceArray
         }
 
-        function onDataLoad(error, loadedStationData, loadedTripsData) {
+        function onDataLoad(loadedStationData, loadedTripsData) {
             console.log("ready() called")
-            console.log("stationData: ", loadedStationData)
-
-            // TODO: testing
-            timeSliceData = createTimeSliceData(loadedTripsData.slice(0, 5000), 30)
-            computeStationTraffic(loadedStationData, loadedTripsData)
-            console.log("tripsData[0]: ", loadedTripsData[0])
-
             // convert stationData to a id -> data map
 
             loadedStationData.forEach(v => {
@@ -266,6 +269,27 @@
                 .attr("transform", function (d) {
                     return "translate(" + albersProjection([d.longitude, d.latitude]) + ")"
                 })
+
+
+            timeSliceData = createTimeSliceData(loadedTripsData.slice(0, 5000), 120)
+            computeStationTraffic(loadedStationData, loadedTripsData)
+
+            // Voronoi cells
+            voronoi = d3.voronoi() //.extent([0,0], [width, height])
+            voronoi.x((d) => d.latitude)
+            voronoi.y((d) => d.longitude)
+
+            voronoiPolys = voronoi(loadedStationData).polygons()
+
+            voronoiPolys = voronoiPolys.map((v, i) => {
+                let metadata = loadedStationData[i]
+                return {
+                    poly: v,
+                    metadata: metadata,
+                }
+            })
+
+            console.log("voronoiPolys: ", voronoiPolys)
 
             stationData = loadedStationData
             tripsData = loadedTripsData
@@ -295,7 +319,7 @@
         // Set up other SVG groups now
         svg.append("g")
             .attr("id", "stations")
-            
+
         svg.append("g")
             .attr("id", "heatmap")
 
@@ -316,11 +340,20 @@
             .attr("stroke", "#333")
             .attr("d", geoPath);
 
-        // Load Bluebike station data
-        d3.queue()
-            .defer(d3.csv, "https://raw.githubusercontent.com/6859-sp21/a4-bikerides/main/bluebikes_2020_stations.csv")
-            .defer(d3.csv, "https://raw.githubusercontent.com/6859-sp21/a4-bikerides/main/bluebikes_2020.csv")
-            .await(onDataLoad)
+        // Load Bluebike station data asynchronously
+        var files = []
+        files.push("https://raw.githubusercontent.com/6859-sp21/a4-bikerides/main/bluebikes_2020_stations.csv")
+        files.push("https://raw.githubusercontent.com/6859-sp21/a4-bikerides/main/bluebikes_2020.csv")
+
+        var promises = []
+
+        files.forEach(url => {
+            promises.push(d3.csv(url))
+        })
+
+        Promise.all(promises).then(values => {
+            onDataLoad(values[0], values[1])
+        })
 
     </script>
 </body>
