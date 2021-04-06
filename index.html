@@ -92,37 +92,25 @@
 
         function d3JoinData(stationData, tripsData, stationDataMap) {
             console.log("d3JoinData() called.")
-            // https://observablehq.com/@mbostock/u-s-airports-voronoi
-            // TODO: don't recompute voronoi each time
+            // Voronoi guide: https://observablehq.com/@mbostock/u-s-airports-voronoi
+
             // Grab heatmap SVG group and set attributes
             var gHeatmap = d3.select("#heatmap")
                 .attr("fill", "none")
                 .attr("stroke", "red")
                 .attr("pointer-events", "all");
 
-            console.log("voronoi polys: ", voronoiPolys)
-
             gHeatmap.selectAll("path")
                 .data(voronoiPolys)
-                .enter()
-                .append("path")
-                .attr("d", polygonF)
-                .attr("fill", getStationColor)
-                .attr("d", d3.geoPath(albersProjection))
-
-
-            // gHeatmap.selectAll("path")
-            //     .data(voronoiPolys)
-            //     .join(
-            //         enter => enter
-            //             .append("path")
-            //             .attr("d", polygonF)
-            //             .attr("fill", getStationColor)
-            //             .attr("d", d3.geoPath(albersProjection)),
-            //         update => update
-            //             .attr("fill", getStationColor),
-            //         exit => exit.remove()
-            //     )
+                .join(
+                    enter => enter
+                        .append("path")
+                        .attr("d", polygonF)
+                        .attr("fill", getStationColor),
+                    update => update
+                        .attr("fill", getStationColor),
+                    exit => exit.remove()
+                )
 
             var maxStationID = 446
 
@@ -130,7 +118,6 @@
             // var maxNetIncoming = Math.min(...stationData.map(v => v.netincoming))
             // console.log("minNetIncoming: ", minNetIncoming)
             // console.log("maxNetIncoming: ", maxNetIncoming)
-
 
             function getStationColor(d) {
                 // TODO: replace with trip value
