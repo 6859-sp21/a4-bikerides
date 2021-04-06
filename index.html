@@ -40,7 +40,7 @@
     <script>
         // Simple
         // https://bl.ocks.org/johnwalley/e1d256b81e51da68f7feb632a53c3518
-        var data = [0, 1];
+        var data = [...Array(20).keys()];
 
         var sliderSimple = d3
             .sliderBottom()
@@ -84,14 +84,16 @@
             val = Math.round(val)
             console.log("Slider changed: ", val)
 
-            let tripsForSlice = timeSliceData[val]["tripsStarting"]
-            console.log("trips for slice: ", tripsForSlice)
+            let sliceData = timeSliceData[val][1]
+            console.log("slider: sliceData ", sliceData)
 
-            d3JoinData(stationData, tripsForSlice, stationDataMap)
+            d3JoinData(stationData, sliceData, stationDataMap)
         }
 
-        function d3JoinData(stationData, tripsData, stationDataMap) {
+        // sliceData: stationID => value map
+        function d3JoinData(stationData, sliceData, stationDataMap) {
             console.log("d3JoinData() called.")
+            console.log("sliceData: ", sliceData)
             // Voronoi guide: https://observablehq.com/@mbostock/u-s-airports-voronoi
 
             // Grab heatmap SVG group and set attributes
@@ -123,14 +125,20 @@
                 // TODO: replace with trip value
                 let stationID = d.metadata["station id"]
                 let stationData = stationDataMap.get(stationID)
-                // let colorValue = tripsData.filter(v => v["end station id"] == stationID).length
-                let colorValue = tripsData.length
-                // console.log("raw color value: ", colorValue)
+                
+                let colorValue = sliceData.get(stationID)
+                if (colorValue == null) {
+                    colorValue = 0
+                }
+
+                console.log("sliceData: ", sliceData)
+                console.log("raw color value: ", colorValue)
+                // let colorValue = tripsData.length
                 // let pct = stationID / 446
-                let pct = colorValue / 50
+                let pct = colorValue / 10
 
                 pct = Math.min(pct, 1.0)
-                console.log("pct: ", pct)
+                // console.log("pct: ", pct)
                 return `hsla(36, ${pct * 100}%, 63%, 0.5)`
             }
 
@@ -226,11 +234,35 @@
             })
             console.log("SLICE MAP: ", sliceMap)
 
-            sliceArray = Array.from(sliceMap, ([key, value]) => value)
+            // Use the sliceData to calculate the per-station values for each time slice
+            var finalStationValues = new Map()
 
+            sliceMap.forEach((value, key) => {
+                let tripsStarting = value["tripsStarting"]
+
+                let stationValuesForSlice = new Map()
+                
+                tripsStarting.forEach(v => {
+                    let stationID = v["start station id"]
+                    let oldValue = stationValuesForSlice.get(stationID)
+                    if (oldValue == null) {
+                        oldValue = 0
+                    }
+
+                    stationValuesForSlice.set(stationID, oldValue + 1)
+                })
+                
+                finalStationValues.set(key, stationValuesForSlice)
+            })
+
+            console.log("FINAL STATION VALUES: ", finalStationValues)
+
+            finalStationValues = Array.from(finalStationValues, ([key, value]) => [key, value])
+
+            finalStationValues.sort((a,b) => a[0] < b[0])
             console.log("Done calculating time slice data...")
 
-            return sliceArray
+            return finalStationValues
         }
 
         function onDataLoad(loadedStationData, loadedTripsData) {
@@ -258,7 +290,7 @@
                 })
 
 
-            timeSliceData = createTimeSliceData(loadedTripsData.slice(0, 5000), 120)
+            timeSliceData = createTimeSliceData(loadedTripsData.slice(0, 50000), 1200)
             computeStationTraffic(loadedStationData, loadedTripsData)
 
             // Voronoi cells
@@ -281,7 +313,7 @@
             stationData = loadedStationData
             tripsData = loadedTripsData
 
-            d3JoinData(stationData, tripsData, stationDataMap)
+            d3JoinData(stationData, timeSliceData[0][1], stationDataMap)
         }
 
 
