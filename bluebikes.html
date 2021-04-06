@@ -29,10 +29,10 @@
                text-align: center;
                width: auto;
                height: auto;
-               padding: 4px;
+               padding: 10px;
                font: 0.9em sans-serif;
                background-color: "white";
-               border-width: 1px;
+               border-width: "1px";
                border-color: "808080";
                border-radius: 10px;
                pointer-events: none;
@@ -42,7 +42,7 @@
                fill: "3388ff";
                stroke: "3388ff";
                stroke-width: 1;
-               fill-opacity: .3;
+               fill-opacity: 0.4;
             }
                
             .stationMarker:hover{
@@ -77,7 +77,7 @@
                container: 'map-container',
                style: 'mapbox://styles/mapbox/light-v10',
                center: [-71.0942,42.3601],
-               zoom: 12.5,
+               zoom: 12,
                minZoom: 12,
                maxZoom: 15,
             });
@@ -109,7 +109,7 @@
                   .style("opacity", 0);
                
                function clearSelections() {
-                  d3.selectAll("circle").classed("selected", false).attr("stroke","#3388ff").attr("stroke-width", 1).attr("fill-opacity", 0.3);
+                  d3.selectAll("circle").classed("selected", false).attr("stroke","#3388ff").attr("stroke-width", 1).attr("fill-opacity", 0.4);
                }
                  
                circleMarker = svg
@@ -121,7 +121,7 @@
                   .style("fill", "#3388ff")
                   .attr("stroke", "#3388ff")
                   .attr("stroke-width", 1)
-                  .attr("fill-opacity", .3)
+                  .attr("fill-opacity", 0.4)
                   .attr("class", "circle")
                   .attr("id", function(d){ return "station-" + d['station id']})
                   //.on("mouseover", mouseover)
@@ -138,22 +138,25 @@
                             if (selectedStation == null) {
                                tooltipText =
                               "<b>"+d['station name']+"</b><br/>"
-                              + "Arriving: " + d.arrivals+"<br/>"
-                              + "Leaving: " + d.departures;
+                              + (+d.arrivals + d.departures) + " riders" +"<br/>"
+                              + "(" + d.arrivals + " arriving, "
+                              + d.departures + " leaving)";
                             }
                             else {
                                tooltipText =
                               "<b>"+d['station name']+"</b><br/>"
-                              + "Arriving from " + selectedStation + ": " + d.specificArrivals+"<br/>"
-                              + "Leaving for " + selectedStation + ": " + d.specificDepartures;
+                              + "<i>From / to " + selectedStation +"</i><br/>"
+                              + (+d.specificArrivals +d.specificDepartures)+" riders " +"<br/>"
+                              + "(" + d.specificArrivals + " arriving from, "
+                              + d.specificDepartures + " leaving to)";
                             }
                            tooltip.transition()
                            .duration(0)
-                           .style("opacity", 1);
+                           .style("opacity", 0.9);
                            tooltip.html(tooltipText)
                            .style("left", (event.pageX) + "px")
                            .style("background", "white")
-                           .style("top", (event.pageY - 28) + "px")
+                           .style("top", (event.pageY - 75) + "px")
                            .style("cursor", "pointer");
                         }
                       }
@@ -162,7 +165,7 @@
                      if(!d3.select(this).classed("selected") ) {
                         d3.select(this).attr("stroke", "#3388ff")
                            .attr("stroke-width", 1)
-                           .attr("fill-opacity", .3);
+                           .attr("fill-opacity", 0.4);
                      }
                         tooltip.transition()
                         .duration(500)
@@ -274,7 +277,19 @@
                     .domain([0, 1000])
                     .range([0, 10]);
                   newRadius = scaleRadius(d.arrivals + d.departures) ;
-                  d3.select("#station-"+d['station id']).transition().duration(1000).attr("r", newRadius);
+                  //d3.select("#station-"+d['station id']).transition().duration(1000).attr("r", newRadius);
+                  
+                  scaleColor = d3.scaleLinear()
+                    .domain([0, 0.40, 0.60, 1])
+                    .range(['darkorange', 'orange', 'blue', 'darkblue']);
+                    
+                  newColor = scaleColor(d.arrivals*1.0 /(d.arrivals + d.departures));
+                    
+                  console.log(newColor);
+                  
+                  
+                  d3.select("#station-"+d['station id']).transition().duration(1000).attr("r", newRadius).style("fill", newColor)
+                  .attr("stroke", newColor);
 
               })
             }
@@ -286,10 +301,23 @@
                     .range([0, 10]);
                   //newRadius = scaleRadius(d.specificArrivals + d.specificDepartures);
                   newRadius = Math.min(scaleRadius(d.specificArrivals + d.specificDepartures), 25)
+                  
                   if (isNaN(newRadius) )
                      newRadius = 0;
                   //console.log(d['station id'], d.specificArrivals, d.specificDepartures);
-                  d3.select("#station-"+d['station id']).transition().duration(1000).attr("r", newRadius);
+                  
+                  
+                  scaleColor = d3.scaleLinear()
+                    .domain([0, 0.40, 0.60, 1])
+                    .range(['darkorange', 'orange', 'blue', 'darkblue']);
+                    
+                  newColor = scaleColor(d.specificArrivals*1.0 /(d.specificArrivals + d.specificDepartures));
+                    
+                  console.log(newColor);
+                  
+                  
+                  d3.select("#station-"+d['station id']).transition().duration(1000).attr("r", newRadius).style("fill", newColor)
+                  .attr("stroke", newColor);
 
               })
             }
