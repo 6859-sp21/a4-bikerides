@@ -1,6 +1,7 @@
 // Code for rendering a voronoi diagram heatmap using station locations as points
 
 // Constants
+const SHOW_HEATMAP = true
 const TIME_SLICE_DURATION = 120 // in minutes
 const NUM_TRIPS_TO_USE = 20000 // number of trips to use from the dataset
 const NUM_SLICES = 12 // number of slices to display
@@ -10,19 +11,25 @@ var stationData, tripsData
 var stationDataMap = new Map()
 var timeSliceData
 var voronoi, voronoiPolys
+var currentTimeSliceIndex = 0
 
 // Callback function for window slice slider
 function onSlider(val) {
     console.log("Slider changed: ", val)
-
     let sliceData = timeSliceData[val][1]
     console.log("slider: sliceData ", sliceData)
-
-    d3BindData(stationData, sliceData, stationDataMap)
+    currentTimeSliceIndex = val
+    d3BindData(stationData, stationDataMap)
 }
 
 // Called to whenver the data view changes to perform the d3 data -> UI binding
-function d3BindData(stationData, sliceData, stationDataMap) {
+function d3BindData(stationData, stationDataMap) {
+    if (!SHOW_HEATMAP) {
+        return
+    }
+
+    sliceData = timeSliceData[currentTimeSliceIndex][1]
+
     console.log("d3JoinData() called.")
     console.log("sliceData: ", sliceData)
     // Voronoi guide: https://observablehq.com/@mbostock/u-s-airports-voronoi
@@ -202,6 +209,9 @@ function createTimeSliceData(tripsData, sliceDuration, numSlices) {
 
 // Setup the heatmap using the given station data and trips dataset
 function setupHeatmap(loadedStationData, loadedTripsData) {
+    if (!SHOW_HEATMAP) {
+        return
+    }
     console.log("ready() called")
     console.log("LOADED TRIPS DATA: ", loadedTripsData)
     console.log("LOADED STATION DATA: ", loadedStationData)
@@ -258,6 +268,6 @@ function setupHeatmap(loadedStationData, loadedTripsData) {
     console.log("timeSliceData passed to intiializeSlider: ", timeSliceData)
     setupHeatmapSlider(timeSliceData, onSlider)
 
-    d3BindData(stationData, timeSliceData[0][1], stationDataMap)
+    d3BindData(stationData, stationDataMap)
 }
 

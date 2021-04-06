@@ -378,7 +378,7 @@
 
          function onMapUpdate() {
             console.log("On map update")
-            d3BindData(stationData, timeSliceData[0][1], stationDataMap)
+            d3BindData(stationData, stationDataMap)
          }
 
          map.on("viewreset", onMapUpdate);
