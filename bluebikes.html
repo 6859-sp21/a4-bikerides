@@ -1,332 +1,392 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <title>Pulse of the City | Blue Bikes </title>
-        <script src="https://d3js.org/d3.v6.js" ></script>
 
-        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-         <!-- Mapbox libraries -->
-        <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.53.1/mapbox-gl.js'></script>
-        <script
-        src="https://code.jquery.com/jquery-3.3.1.min.js"
-        integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
-        crossorigin="anonymous"></script>
-        <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.53.1/mapbox-gl.css' rel='stylesheet' />
+<head>
+   <meta charset="utf-8">
+   <title>Pulse of the City | Blue Bikes </title>
+   <script src="https://d3js.org/d3.v6.js"></script>
 
-        <style>
-            #map-container {
-                height: 780px;
-                width: 100%;
-            }
+   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+      integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+   <!-- Mapbox libraries -->
+   <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.53.1/mapbox-gl.js'></script>
+   <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+      integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+   <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.53.1/mapbox-gl.css' rel='stylesheet' />
 
-            div {
-                display: inline-block;
-            }
+   <style>
+      #map-container {
+         height: 780px;
+         width: 100%;
+      }
 
-            div.tooltip {
-               position: absolute;
-               text-align: center;
-               width: auto;
-               height: auto;
-               padding: 10px;
-               font: 0.9em sans-serif;
-               background-color: "white";
-               border-width: "1px";
-               border-color: "808080";
-               border-radius: 10px;
-               pointer-events: none;
-               z-index: 99;
+      div {
+         display: inline-block;
+      }
 
-            .circle{
-               fill: "3388ff";
-               stroke: "3388ff";
-               stroke-width: 1;
-               fill-opacity: 0.4;
-            }
+      div.tooltip {
+         position: absolute;
+         text-align: center;
+         width: auto;
+         height: auto;
+         padding: 10px;
+         font: 0.9em sans-serif;
+         background-color: "white";
+         border-width: "1px";
+         border-color: "808080";
+         border-radius: 10px;
+         pointer-events: none;
+         z-index: 99;
 
-            .stationMarker:hover{
-               stroke: black;
-               stroke-width: 4px;
-            }
-        </style>
-    </head>
-    <body>
-            <div class="row">
-               <div class="col-9">
-                  <div id="map-container"></div>
-               </div>
-               <div class="col-3">
-                  <br>
-                  <h3>Pulse of the City | Blue Bikes </h3></br>
-                  <p> Bluebikes is Metro Boston's public bike share program, with more than 1,800 bikes at over 200 stations across Boston, Brookline, Cambridge, Somerville and Everett.
-                      Bluebikes is owned by the municipalities of Boston, Brookline, Cambridge, Somerville and Everett, and operated by Motivate.
-                      The team was interested in shared bikeflows, and how that changed during the pandemic. December 2019 and 2020 data published by Bluebikes are used to visualize this map. </p>
-                  <p><b>Circle sizes</b> indicate the overall volume of traffic at each bike station.</p>
+         .circle {
+            fill: "3388ff";
+            stroke: "3388ff";
+            stroke-width: 1;
+            fill-opacity: 0.4;
+         }
 
-                  <p><b>Colors</b> indicate the relative proportions of people <b style="color:darkblue">arriving</b> and <b style="color:darkorange">leaving</b> each station.</p>
+         .stationMarker:hover {
+            stroke: black;
+            stroke-width: 4px;
+         }
+   </style>
+</head>
 
-                  <p><b>Click on a station</b> to view traffic at all stations originating or terminating at the selected station. Circles are rescaled and recolored to show the volume of riders for each station that are <b style="color:darkblue">arriving</b> at or <b style="color:darkorange">leaving</b> the selected station.</p>
-               </div>
-               </div>
+<body>
+   <div class="row">
+      <div class="col-9">
+         <div id="map-container"></div>
+      </div>
+      <div class="col-3">
+         <br>
+         <h3>Pulse of the City | Blue Bikes </h3></br>
+         <p> Bluebikes is Metro Boston's public bike share program, with more than 1,800 bikes at over 200 stations
+            across Boston, Brookline, Cambridge, Somerville and Everett.
+            Bluebikes is owned by the municipalities of Boston, Brookline, Cambridge, Somerville and Everett, and
+            operated by Motivate.
+            The team was interested in shared bikeflows, and how that changed during the pandemic. December 2019 and
+            2020 data published by Bluebikes are used to visualize this map. </p>
+         <p><b>Circle sizes</b> indicate the overall volume of traffic at each bike station.</p>
 
-        <script>
+         <p><b>Colors</b> indicate the relative proportions of people <b style="color:darkblue">arriving</b> and <b
+               style="color:darkorange">leaving</b> each station.</p>
 
-            var tripsData, stationData;
-            var selectedStation = null;
+         <p><b>Click on a station</b> to view traffic at all stations originating or terminating at the selected
+            station. Circles are rescaled and recolored to show the volume of riders for each station that are <b
+               style="color:darkblue">arriving</b> at or <b style="color:darkorange">leaving</b> the selected station.
+         </p>
+      </div>
+   </div>
 
+   <div class="row align-items-center">
+      <div class="col-9">
+         <div id="slider-simple"></div>
+      </div>
+      <div class="col-3">
+          <p id="value-simple"></p>
+      </div>
+  </div>
 
-            // Draw the map
-            mapboxgl.accessToken = 'pk.eyJ1IjoiY2hld3ljaGxvZSIsImEiOiJjajJiZ2g5YXQwMHYxMzJvODQxN245Z2RhIn0.ZJfu5XA9ij2_nBlZx2dcNg';
-            var map = new mapboxgl.Map({
-               container: 'map-container',
-               style: 'mapbox://styles/mapbox/light-v10',
-               center: [-71.0942,42.3601],
-               zoom: 12,
-               minZoom: 12,
-               maxZoom: 15,
-            });
+   <script>
 
-            // appending data to map
-            var container = map.getCanvasContainer();
-            var svg = d3
-              .select(container)
-              .append("svg")
-              .attr("width", "100%")
-              .attr("height", "100%")
-              .style("position", "absolute")
-              .style("z-index", 2);
-
-            function project(d) {
-               //console.log(+d.longitude, +d.latitude);
-              return map.project(new mapboxgl.LngLat(+d.longitude, +d.latitude));
-            }
+      var tripsData, stationData;
+      var selectedStation = null;
 
 
-            // Parse the data and update markers
-            d3.csv('https://raw.githubusercontent.com/6859-sp21/a4-bikerides/main/bluebikes_2020_stations.csv').then(function(csv)  {
-                  stationMarkersList = {};
-                  stationData = csv;
+      // Draw the map
+      mapboxgl.accessToken = 'pk.eyJ1IjoiY2hld3ljaGxvZSIsImEiOiJjajJiZ2g5YXQwMHYxMzJvODQxN245Z2RhIn0.ZJfu5XA9ij2_nBlZx2dcNg';
+      var map = new mapboxgl.Map({
+         container: 'map-container',
+         style: 'mapbox://styles/mapbox/light-v10',
+         center: [-71.0942, 42.3601],
+         zoom: 12,
+         minZoom: 12,
+         maxZoom: 15,
+      });
 
-               // create a tooltip
-               var tooltip = d3.select("body").append("div")
-                  .attr("class", "tooltip")
+      // appending data to map
+      var container = map.getCanvasContainer();
+      var svg = d3
+         .select(container)
+         .append("svg")
+         .attr("width", "100%")
+         .attr("height", "100%")
+         .style("position", "absolute")
+         .style("z-index", 2);
+
+      function project(d) {
+         //console.log(+d.longitude, +d.latitude);
+         return map.project(new mapboxgl.LngLat(+d.longitude, +d.latitude));
+      }
+
+
+      // Parse the data and update markers
+      d3.csv('https://raw.githubusercontent.com/6859-sp21/a4-bikerides/main/bluebikes_2020_stations.csv').then(function (csv) {
+         stationMarkersList = {};
+         stationData = csv;
+
+         // create a tooltip
+         var tooltip = d3.select("body").append("div")
+            .attr("class", "tooltip")
+            .style("opacity", 0);
+
+         function clearSelections() {
+            d3.selectAll("circle").classed("selected", false).attr("stroke", "#3388ff").attr("stroke-width", 1).attr("fill-opacity", 0.4);
+         }
+
+         circleMarker = svg
+            .selectAll("circle")
+            .data(stationData)
+            .enter()
+            .append("circle")
+            .attr("r", 1)
+            .style("fill", "#3388ff")
+            .attr("stroke", "#3388ff")
+            .attr("stroke-width", 1)
+            .attr("fill-opacity", 0.4)
+            .attr("class", "circle")
+            .attr("id", function (d) { return "station-" + d['station id'] })
+            //.on("mouseover", mouseover)
+            .on("mouseover", function (d) {
+               d3.select(this).attr("stroke", "black")
+                  .attr("stroke-width", 3)
+               //.attr("fill-opacity", .8);
+            })
+            .on("mousemove", function (event, d) {
+               {
+                  d3.select(this).style("cursor", "pointer");
+                  if (!d3.select(this).classed("selected")) {
+                     var tooltipText;
+                     if (selectedStation == null) {
+                        tooltipText =
+                           "<b>" + d['station name'] + "</b><br/>"
+                           + (+d.arrivals + d.departures) + " riders" + "<br/>"
+                           + "(" + d.arrivals + " arriving, "
+                           + d.departures + " leaving)";
+                     }
+                     else {
+                        tooltipText =
+                           "<b>" + d['station name'] + "</b><br/>"
+                           + "<i>From / to " + selectedStation + "</i><br/>"
+                           + (+d.specificArrivals + d.specificDepartures) + " riders " + "<br/>"
+                           + "(" + d.specificArrivals + " arriving from, "
+                           + d.specificDepartures + " leaving to)";
+                     }
+                     tooltip.transition()
+                        .duration(0)
+                        .style("opacity", 0.9);
+                     tooltip.html(tooltipText)
+                        .style("left", (event.pageX) + "px")
+                        .style("background", "white")
+                        .style("top", (event.pageY - 75) + "px")
+                        .style("cursor", "pointer");
+                  }
+               }
+            })
+            .on("mouseout", function (event, d) {
+               if (!d3.select(this).classed("selected")) {
+                  d3.select(this).attr("stroke", "#3388ff")
+                     .attr("stroke-width", 1)
+                     .attr("fill-opacity", 0.4);
+               }
+               tooltip.transition()
+                  .duration(500)
                   .style("opacity", 0);
 
-               function clearSelections() {
-                  d3.selectAll("circle").classed("selected", false).attr("stroke","#3388ff").attr("stroke-width", 1).attr("fill-opacity", 0.4);
-               }
+            })
+            .on("click", function (event, d) {
+               if (!d3.select(this).classed("selected")) {
+                  clearSelections();
+                  computeStationOnlyTraffic(d['station id']);
+                  updateMarkersStationTraffic();
+                  d3.select(this).classed("selected", true);
+                  selectedStation = d['station name'];
+                  d3.select(this).attr("stroke", "black").attr("stroke-width", 3).attr("fill-opacity", 0.8);
+                  tooltip.transition()
+                     .duration(0)
+                     .style("opacity", 0);
 
-               circleMarker = svg
-                  .selectAll("circle")
-                  .data(stationData)
-                  .enter()
-                  .append("circle")
-                  .attr("r", 1)
-                  .style("fill", "#3388ff")
-                  .attr("stroke", "#3388ff")
-                  .attr("stroke-width", 1)
-                  .attr("fill-opacity", 0.4)
-                  .attr("class", "circle")
-                  .attr("id", function(d){ return "station-" + d['station id']})
-                  //.on("mouseover", mouseover)
-                  .on("mouseover", function(d) {
-                       d3.select(this).attr("stroke", "black")
-                        .attr("stroke-width", 3)
-                        //.attr("fill-opacity", .8);
-                  })
-                  .on("mousemove", function(event, d) {
-                      {
-                           d3.select(this).style("cursor", "pointer");
-                            if (!d3.select(this).classed("selected") ){
-                            var tooltipText ;
-                            if (selectedStation == null) {
-                               tooltipText =
-                              "<b>"+d['station name']+"</b><br/>"
-                              + (+d.arrivals + d.departures) + " riders" +"<br/>"
-                              + "(" + d.arrivals + " arriving, "
-                              + d.departures + " leaving)";
-                            }
-                            else {
-                               tooltipText =
-                              "<b>"+d['station name']+"</b><br/>"
-                              + "<i>From / to " + selectedStation +"</i><br/>"
-                              + (+d.specificArrivals +d.specificDepartures)+" riders " +"<br/>"
-                              + "(" + d.specificArrivals + " arriving from, "
-                              + d.specificDepartures + " leaving to)";
-                            }
-                           tooltip.transition()
-                           .duration(0)
-                           .style("opacity", 0.9);
-                           tooltip.html(tooltipText)
-                           .style("left", (event.pageX) + "px")
-                           .style("background", "white")
-                           .style("top", (event.pageY - 75) + "px")
-                           .style("cursor", "pointer");
-                        }
-                      }
-                  })
-                  .on("mouseout", function(event, d) {
-                     if(!d3.select(this).classed("selected") ) {
-                        d3.select(this).attr("stroke", "#3388ff")
-                           .attr("stroke-width", 1)
-                           .attr("fill-opacity", 0.4);
-                     }
-                        tooltip.transition()
-                        .duration(500)
-                        .style("opacity", 0);
-
-                  })
-                  .on("click", function(event, d){
-                    if (!d3.select(this).classed("selected") ){
-                       clearSelections();
-                       computeStationOnlyTraffic(d['station id']);
-                        updateMarkersStationTraffic();
-                       d3.select(this).classed("selected", true);
-                       selectedStation = d['station name'];
-                       d3.select(this).attr("stroke","black").attr("stroke-width", 3).attr("fill-opacity", 0.8);
-                        tooltip.transition()
-                        .duration(0)
-                        .style("opacity", 0);
-
-                    }else{
-                       d3.select(this).classed("selected", false);
-                       selectedStation = null;
-                       d3.select(this).attr("stroke","#3388ff").attr("stroke-width", 1);
-                       updateMarkersTotalTraffic();
-                    }
-                   })
-
-
-               addStationMarkers();
-               map.on("viewreset", addStationMarkers);
-               map.on("move", addStationMarkers);
-               map.on("moveend", addStationMarkers);
-               //map.on("click", clearSelections);
-               //console.log(stationData);
-
-               d3.csv('https://raw.githubusercontent.com/6859-sp21/a4-bikerides/main/bluebikes_2020.csv').then(function(csv) {
-                  tripsData = csv;
-                  //console.log(tripsData);
-                  computeTotalTraffic();
+               } else {
+                  d3.select(this).classed("selected", false);
+                  selectedStation = null;
+                  d3.select(this).attr("stroke", "#3388ff").attr("stroke-width", 1);
                   updateMarkersTotalTraffic();
+               }
+            })
 
-               });
 
+         addStationMarkers();
+         map.on("viewreset", addStationMarkers);
+         map.on("move", addStationMarkers);
+         map.on("moveend", addStationMarkers);
+         //map.on("click", clearSelections);
+         //console.log(stationData);
+
+         d3.csv('https://raw.githubusercontent.com/6859-sp21/a4-bikerides/main/bluebikes_2020.csv').then(function (csv) {
+            tripsData = csv;
+            //console.log(tripsData);
+            computeTotalTraffic();
+            updateMarkersTotalTraffic();
+
+         });
+
+      });
+
+      function addStationMarkers() {
+
+         circleMarker
+            .attr("cx", function (d) {
+               return project(d).x;
+            })
+            .attr("cy", function (d) {
+               return project(d).y;
             });
+      }
 
-            function addStationMarkers() {
+      function computeTotalTraffic() {
+         var arrivals = {};
+         var departures = {};
+         for (var i = 0; i < tripsData.length; ++i) {
+            //console.log(tripsData[i]['end station id'], tripsData[i]['start station id']);
+            if (arrivals[tripsData[i]['end station id']] >= 0)
+               arrivals[tripsData[i]['end station id']]++;
+            else
+               arrivals[tripsData[i]['end station id']] = 1
+            if (departures[tripsData[i]['start station id']] >= 0)
+               departures[tripsData[i]['start station id']]++;
+            else
+               departures[tripsData[i]['start station id']] = 1
+            //console.log(arrivals[tripsData[i]['end station id']], departures[tripsData[i]['start station id']]);
+         }
+         stationData.forEach(function (d) {
+            d.arrivals = arrivals[d['station id']];
+            d.departures = departures[d['station id']];
+            // Too slow and inefficient:
+            //d.arrivals = tripsData.filter(trip => (trip['end station id'] == d['station id'])).length;
+            //d.departures = tripsData.filter(trip => (trip['start station id'] == d['station id'])).length;
+            //console.log(d['station id'], d.arrivals, d.departures);
+         })
 
-              circleMarker
-                .attr("cx", function(d) {
-                  return project(d).x;
-                })
-                .attr("cy", function(d) {
-                  return project(d).y;
-                });
-            }
+      }
 
-            function computeTotalTraffic() {
-               var arrivals = {};
-               var departures = {};
-               for(var i = 0; i < tripsData.length; ++i){
-                  //console.log(tripsData[i]['end station id'], tripsData[i]['start station id']);
-                   if (arrivals[tripsData[i]['end station id']] >= 0)
-                     arrivals[tripsData[i]['end station id']]++;
-                  else
-                     arrivals[tripsData[i]['end station id']] = 1
-                  if (departures[tripsData[i]['start station id']] >= 0)
-                     departures[tripsData[i]['start station id']]++;
-                  else
-                     departures[tripsData[i]['start station id']] = 1
-                   //console.log(arrivals[tripsData[i]['end station id']], departures[tripsData[i]['start station id']]);
-               }
-               stationData.forEach(function(d) {
-                  d.arrivals = arrivals[ d['station id'] ];
-                  d.departures = departures[ d['station id'] ];
-               // Too slow and inefficient:
-                //d.arrivals = tripsData.filter(trip => (trip['end station id'] == d['station id'])).length;
-                //d.departures = tripsData.filter(trip => (trip['start station id'] == d['station id'])).length;
-                //console.log(d['station id'], d.arrivals, d.departures);
-               })
+      function computeStationOnlyTraffic(stationId) {
+         var arrivals = {};
+         var departures = {};
+         stationSpecificTripsData = tripsData.filter(trip =>
+            (trip['end station id'] == stationId || trip['start station id'] == stationId));
+         for (var i = 0; i < stationSpecificTripsData.length; ++i) {
+            //console.log(tripsData[i]['end station id'], tripsData[i]['start station id']);
+            if (arrivals[stationSpecificTripsData[i]['end station id']] >= 0)
+               arrivals[stationSpecificTripsData[i]['end station id']]++;
+            else
+               arrivals[stationSpecificTripsData[i]['end station id']] = 1
+            if (departures[stationSpecificTripsData[i]['start station id']] >= 0)
+               departures[stationSpecificTripsData[i]['start station id']]++;
+            else
+               departures[stationSpecificTripsData[i]['start station id']] = 1
+            //console.log(arrivals[tripsData[i]['end station id']], departures[tripsData[i]['start station id']]);
+         }
+         stationData.forEach(function (d) {
+            d.specificArrivals = arrivals[d['station id']];
+            d.specificDepartures = departures[d['station id']];
+         })
 
-            }
+      }
 
-            function computeStationOnlyTraffic(stationId) {
-               var arrivals = {};
-               var departures = {};
-               stationSpecificTripsData = tripsData.filter(trip =>
-                  (trip['end station id'] == stationId || trip['start station id'] == stationId));
-               for(var i = 0; i < stationSpecificTripsData.length; ++i){
-                  //console.log(tripsData[i]['end station id'], tripsData[i]['start station id']);
-                   if (arrivals[stationSpecificTripsData[i]['end station id']] >= 0)
-                     arrivals[stationSpecificTripsData[i]['end station id']]++;
-                  else
-                     arrivals[stationSpecificTripsData[i]['end station id']] = 1
-                  if (departures[stationSpecificTripsData[i]['start station id']] >= 0)
-                     departures[stationSpecificTripsData[i]['start station id']]++;
-                  else
-                     departures[stationSpecificTripsData[i]['start station id']] = 1
-                   //console.log(arrivals[tripsData[i]['end station id']], departures[tripsData[i]['start station id']]);
-               }
-               stationData.forEach(function(d) {
-                  d.specificArrivals = arrivals[ d['station id'] ];
-                  d.specificDepartures = departures[ d['station id'] ];
-               })
+      function updateMarkersTotalTraffic() {
+         stationData.forEach(function (d) {
+            var scaleRadius = d3.scaleSqrt()
+               .domain([0, 1000])
+               .range([0, 10]);
+            newRadius = scaleRadius(d.arrivals + d.departures);
+            //d3.select("#station-"+d['station id']).transition().duration(1000).attr("r", newRadius);
 
-            }
+            scaleColor = d3.scaleLinear()
+               .domain([0, 0.40, 0.60, 1])
+               .range(['darkorange', 'orange', 'blue', 'darkblue']);
 
-            function updateMarkersTotalTraffic() {
-              stationData.forEach(function(d) {
-                 var scaleRadius = d3.scaleSqrt()
-                    .domain([0, 1000])
-                    .range([0, 10]);
-                  newRadius = scaleRadius(d.arrivals + d.departures) ;
-                  //d3.select("#station-"+d['station id']).transition().duration(1000).attr("r", newRadius);
+            newColor = scaleColor(d.arrivals * 1.0 / (d.arrivals + d.departures));
 
-                  scaleColor = d3.scaleLinear()
-                    .domain([0, 0.40, 0.60, 1])
-                    .range(['darkorange', 'orange', 'blue', 'darkblue']);
-
-                  newColor = scaleColor(d.arrivals*1.0 /(d.arrivals + d.departures));
-
-                  console.log(newColor);
+            console.log(newColor);
 
 
-                  d3.select("#station-"+d['station id']).transition().duration(1000).attr("r", newRadius).style("fill", newColor)
-                  .attr("stroke", newColor);
+            d3.select("#station-" + d['station id']).transition().duration(1000).attr("r", newRadius).style("fill", newColor)
+               .attr("stroke", newColor);
 
-              })
-            }
+         })
+      }
 
-            function updateMarkersStationTraffic() {
-              stationData.forEach(function(d) {
-                 var scaleRadius = d3.scaleSqrt()
-                    .domain([0, 50])
-                    .range([0, 10]);
-                  //newRadius = scaleRadius(d.specificArrivals + d.specificDepartures);
-                  newRadius = Math.min(scaleRadius(d.specificArrivals + d.specificDepartures), 25)
+      function updateMarkersStationTraffic() {
+         stationData.forEach(function (d) {
+            var scaleRadius = d3.scaleSqrt()
+               .domain([0, 50])
+               .range([0, 10]);
+            //newRadius = scaleRadius(d.specificArrivals + d.specificDepartures);
+            newRadius = Math.min(scaleRadius(d.specificArrivals + d.specificDepartures), 25)
 
-                  if (isNaN(newRadius) )
-                     newRadius = 0;
-                  //console.log(d['station id'], d.specificArrivals, d.specificDepartures);
-
-
-                  scaleColor = d3.scaleLinear()
-                    .domain([0, 0.40, 0.60, 1])
-                    .range(['darkorange', 'orange', 'blue', 'darkblue']);
-
-                  newColor = scaleColor(d.specificArrivals*1.0 /(d.specificArrivals + d.specificDepartures));
-
-                  console.log(newColor);
+            if (isNaN(newRadius))
+               newRadius = 0;
+            //console.log(d['station id'], d.specificArrivals, d.specificDepartures);
 
 
-                  d3.select("#station-"+d['station id']).transition().duration(1000).attr("r", newRadius).style("fill", newColor)
-                  .attr("stroke", newColor);
+            scaleColor = d3.scaleLinear()
+               .domain([0, 0.40, 0.60, 1])
+               .range(['darkorange', 'orange', 'blue', 'darkblue']);
 
-              })
-            }
+            newColor = scaleColor(d.specificArrivals * 1.0 / (d.specificArrivals + d.specificDepartures));
 
-        </script>
-    </body>
+            console.log(newColor);
+
+
+            d3.select("#station-" + d['station id']).transition().duration(1000).attr("r", newRadius).style("fill", newColor)
+               .attr("stroke", newColor);
+
+         })
+      }
+
+   </script>
+
+   <script src="https://d3js.org/d3-voronoi.v1.min.js"></script>
+   <script src="https://unpkg.com/d3-simple-slider"></script>
+
+   <script src="heatmap_slider.js"></script>
+   <script src="heatmap.js"></script>
+
+   <script>
+      // Set up other SVG groups now
+      svg.append("g")
+         .attr("id", "stations")
+
+      svg.append("g")
+         .attr("id", "heatmap")
+
+      // Load the Bluebike dataset 
+      var files = []
+      files.push("https://raw.githubusercontent.com/6859-sp21/a4-bikerides/main/bluebikes_2020_stations.csv")
+      // files.push("https://raw.githubusercontent.com/6859-sp21/a4-bikerides/main/bluebikes_2020.csv")
+      files.push("https://raw.githubusercontent.com/6859-sp21/a4-bikerides/bdnwang-voronoi/data/201909-bluebikes-tripdata.csv")
+
+      var promises = []
+
+      files.forEach(url => {
+         promises.push(d3.csv(url))
+      })
+
+      // Initialize the heatmap with the dataset
+      Promise.all(promises).then(values => {
+         setupHeatmap(values[0], values[1])
+
+         function onMapUpdate() {
+            console.log("On map update")
+            d3BindData(stationData, timeSliceData[0][1], stationDataMap)
+         }
+
+         map.on("viewreset", onMapUpdate);
+         map.on("move", onMapUpdate);
+         map.on("moveend", onMapUpdate);
+      })
+
+   </script>
+</body>
+
 </html>

@@ -41,7 +41,8 @@ function d3BindData(stationData, sliceData, stationDataMap) {
                 .attr("d", polygonF)
                 .attr("fill", getStationColor),
             update => update
-                .attr("fill", getStationColor),
+                .attr("fill", getStationColor)
+                .attr("d", polygonF),
             exit => exit.remove()
         )
 
@@ -65,7 +66,7 @@ function d3BindData(stationData, sliceData, stationDataMap) {
         let pct = colorValue / 20
 
         pct = Math.min(pct, 1.0)
-        return `hsla(36, ${pct * 100}%, 63%, 0.9)`
+        return `hsla(36, ${pct * 100}%, 63%, 0.7)`
     }
 
     function polygonF(d) {
@@ -73,7 +74,9 @@ function d3BindData(stationData, sliceData, stationDataMap) {
         d = d.filter(v => v != null)
 
         let p = d.map(v => {
-            return albersProjection([v[1], v[0]])
+            // return albersProjection([v[1], v[0]])
+            let point = {latitude: v[0], longitude: v[1]}
+            return project(point).x + " " +project(point).y
         })
         return "M" + p.join("L") + "Z";
     }
@@ -201,6 +204,8 @@ function createTimeSliceData(tripsData, sliceDuration, numSlices) {
 function setupHeatmap(loadedStationData, loadedTripsData) {
     console.log("ready() called")
     console.log("LOADED TRIPS DATA: ", loadedTripsData)
+    console.log("LOADED STATION DATA: ", loadedStationData)
+
     // convert stationData to a id -> data map
 
     loadedStationData.forEach(v => {
@@ -208,20 +213,23 @@ function setupHeatmap(loadedStationData, loadedTripsData) {
     });
     console.log(stationDataMap)
 
-    var gStations = d3.select("#stations")
-        .attr("fill", "none")
-        .attr("stroke", "red")
-        .attr("pointer-events", "all");
+    // var gStations = d3.select("#stations")
+    //     .attr("fill", "CornflowerBlue")
+    //     .attr("stroke", "CornflowerBlue")
+    //     .attr("pointer-events", "all");
 
-    // Plot station locations
-    gStations.selectAll("circle")
-        .data(loadedStationData)
-        .enter()
-        .append('circle')
-        .attr("r", 2)
-        .attr("transform", function (d) {
-            return "translate(" + albersProjection([d.longitude, d.latitude]) + ")"
-        })
+    // // Plot station locations
+    // gStations.selectAll("circle")
+    //     .data(loadedStationData)
+    //     .enter()
+    //     .append('circle')
+    //     .attr("r", 1)
+    //     .attr("cx", function (d) {
+    //         return project(d).x;
+    //      })
+    //     .attr("cy", function (d) {
+    //         return project(d).y;
+    //     });
 
 
     timeSliceData = createTimeSliceData(loadedTripsData.slice(0, NUM_TRIPS_TO_USE), TIME_SLICE_DURATION, NUM_SLICES)
