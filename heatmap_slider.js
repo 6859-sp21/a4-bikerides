@@ -32,7 +32,7 @@ function setupHeatmapSlider(timeSliceData, onSlider) {
                 sumTrips += value
             })
 
-            d3.select('p#value-simple').text(sumTrips + " trips.");
+            d3.select('p#value-simple').text(sumTrips + " trips in this time slice.");
         });
 
     var gSimple = d3
