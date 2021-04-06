@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <title>Pulse of the City | Blue Bikes </title>
         <script src="https://d3js.org/d3.v6.js" ></script>
-        
+
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
          <!-- Mapbox libraries -->
         <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.53.1/mapbox-gl.js'></script>
@@ -19,11 +19,11 @@
                 height: 780px;
                 width: 100%;
             }
-            
+
             div {
                 display: inline-block;
             }
-            
+
             div.tooltip {
                position: absolute;
                text-align: center;
@@ -37,14 +37,14 @@
                border-radius: 10px;
                pointer-events: none;
                z-index: 99;
-               
+
             .circle{
                fill: "3388ff";
                stroke: "3388ff";
                stroke-width: 1;
                fill-opacity: 0.4;
             }
-               
+
             .stationMarker:hover{
                stroke: black;
                stroke-width: 4px;
@@ -63,19 +63,19 @@
                       Bluebikes is owned by the municipalities of Boston, Brookline, Cambridge, Somerville and Everett, and operated by Motivate.
                       The team was interested in shared bikeflows, and how that changed during the pandemic. December 2019 and 2020 data published by Bluebikes are used to visualize this map. </p>
                   <p><b>Circle sizes</b> indicate the overall volume of traffic at each bike station.</p>
-                  
+
                   <p><b>Colors</b> indicate the relative proportions of people <b style="color:darkblue">arriving</b> and <b style="color:darkorange">leaving</b> each station.</p>
-                  
-                  <p><b>Click on a station</b> to view traffic at all stations originating or terminating at the selected station. Circles are rescaled and recolored to show the volime of riders for each station that are <b style="color:darkblue">arriving</b> at or <b style="color:darkorange">leaving</b> the selected station.</p>
+
+                  <p><b>Click on a station</b> to view traffic at all stations originating or terminating at the selected station. Circles are rescaled and recolored to show the volume of riders for each station that are <b style="color:darkblue">arriving</b> at or <b style="color:darkorange">leaving</b> the selected station.</p>
                </div>
                </div>
 
         <script>
-            
+
             var tripsData, stationData;
             var selectedStation = null;
 
-            
+
             // Draw the map
             mapboxgl.accessToken = 'pk.eyJ1IjoiY2hld3ljaGxvZSIsImEiOiJjajJiZ2g5YXQwMHYxMzJvODQxN245Z2RhIn0.ZJfu5XA9ij2_nBlZx2dcNg';
             var map = new mapboxgl.Map({
@@ -86,7 +86,7 @@
                minZoom: 12,
                maxZoom: 15,
             });
-            
+
             // appending data to map
             var container = map.getCanvasContainer();
             var svg = d3
@@ -96,27 +96,27 @@
               .attr("height", "100%")
               .style("position", "absolute")
               .style("z-index", 2);
-              
+
             function project(d) {
                //console.log(+d.longitude, +d.latitude);
               return map.project(new mapboxgl.LngLat(+d.longitude, +d.latitude));
             }
-            
-            
+
+
             // Parse the data and update markers
             d3.csv('https://raw.githubusercontent.com/6859-sp21/a4-bikerides/main/bluebikes_2020_stations.csv').then(function(csv)  {
                   stationMarkersList = {};
                   stationData = csv;
-                  
+
                // create a tooltip
                var tooltip = d3.select("body").append("div")
                   .attr("class", "tooltip")
                   .style("opacity", 0);
-               
+
                function clearSelections() {
                   d3.selectAll("circle").classed("selected", false).attr("stroke","#3388ff").attr("stroke-width", 1).attr("fill-opacity", 0.4);
                }
-                 
+
                circleMarker = svg
                   .selectAll("circle")
                   .data(stationData)
@@ -175,7 +175,7 @@
                         tooltip.transition()
                         .duration(500)
                         .style("opacity", 0);
-                     
+
                   })
                   .on("click", function(event, d){
                     if (!d3.select(this).classed("selected") ){
@@ -188,7 +188,7 @@
                         tooltip.transition()
                         .duration(0)
                         .style("opacity", 0);
-                        
+
                     }else{
                        d3.select(this).classed("selected", false);
                        selectedStation = null;
@@ -196,15 +196,15 @@
                        updateMarkersTotalTraffic();
                     }
                    })
-                                    
-                  
+
+
                addStationMarkers();
                map.on("viewreset", addStationMarkers);
                map.on("move", addStationMarkers);
                map.on("moveend", addStationMarkers);
                //map.on("click", clearSelections);
                //console.log(stationData);
-               
+
                d3.csv('https://raw.githubusercontent.com/6859-sp21/a4-bikerides/main/bluebikes_2020.csv').then(function(csv) {
                   tripsData = csv;
                   //console.log(tripsData);
@@ -212,9 +212,9 @@
                   updateMarkersTotalTraffic();
 
                });
-            
+
             });
-            
+
             function addStationMarkers() {
 
               circleMarker
@@ -225,7 +225,7 @@
                   return project(d).y;
                 });
             }
-            
+
             function computeTotalTraffic() {
                var arrivals = {};
                var departures = {};
@@ -249,9 +249,9 @@
                 //d.departures = tripsData.filter(trip => (trip['start station id'] == d['station id'])).length;
                 //console.log(d['station id'], d.arrivals, d.departures);
                })
-               
+
             }
-            
+
             function computeStationOnlyTraffic(stationId) {
                var arrivals = {};
                var departures = {};
@@ -273,9 +273,9 @@
                   d.specificArrivals = arrivals[ d['station id'] ];
                   d.specificDepartures = departures[ d['station id'] ];
                })
-               
+
             }
-            
+
             function updateMarkersTotalTraffic() {
               stationData.forEach(function(d) {
                  var scaleRadius = d3.scaleSqrt()
@@ -283,22 +283,22 @@
                     .range([0, 10]);
                   newRadius = scaleRadius(d.arrivals + d.departures) ;
                   //d3.select("#station-"+d['station id']).transition().duration(1000).attr("r", newRadius);
-                  
+
                   scaleColor = d3.scaleLinear()
                     .domain([0, 0.40, 0.60, 1])
                     .range(['darkorange', 'orange', 'blue', 'darkblue']);
-                    
+
                   newColor = scaleColor(d.arrivals*1.0 /(d.arrivals + d.departures));
-                    
+
                   console.log(newColor);
-                  
-                  
+
+
                   d3.select("#station-"+d['station id']).transition().duration(1000).attr("r", newRadius).style("fill", newColor)
                   .attr("stroke", newColor);
 
               })
             }
-            
+
             function updateMarkersStationTraffic() {
               stationData.forEach(function(d) {
                  var scaleRadius = d3.scaleSqrt()
@@ -306,27 +306,27 @@
                     .range([0, 10]);
                   //newRadius = scaleRadius(d.specificArrivals + d.specificDepartures);
                   newRadius = Math.min(scaleRadius(d.specificArrivals + d.specificDepartures), 25)
-                  
+
                   if (isNaN(newRadius) )
                      newRadius = 0;
                   //console.log(d['station id'], d.specificArrivals, d.specificDepartures);
-                  
-                  
+
+
                   scaleColor = d3.scaleLinear()
                     .domain([0, 0.40, 0.60, 1])
                     .range(['darkorange', 'orange', 'blue', 'darkblue']);
-                    
+
                   newColor = scaleColor(d.specificArrivals*1.0 /(d.specificArrivals + d.specificDepartures));
-                    
+
                   console.log(newColor);
-                  
-                  
+
+
                   d3.select("#station-"+d['station id']).transition().duration(1000).attr("r", newRadius).style("fill", newColor)
                   .attr("stroke", newColor);
 
               })
             }
-            
+
         </script>
     </body>
 </html>
