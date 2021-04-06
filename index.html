@@ -74,6 +74,10 @@
     <script>
         // ALL FUNCTION DEFINTIONS
 
+        // Constants
+        const TIME_SLICE_DURATION = 120 // in minutes
+        const NUM_TRIPS_TO_USE = 5000 // number of trips to use from the dataset
+
         // Global variables
         var stationData, tripsData
         var stationDataMap = new Map()
@@ -131,14 +135,9 @@
                     colorValue = 0
                 }
 
-                console.log("sliceData: ", sliceData)
-                console.log("raw color value: ", colorValue)
-                // let colorValue = tripsData.length
-                // let pct = stationID / 446
-                let pct = colorValue / 10
+                let pct = colorValue / 5
 
                 pct = Math.min(pct, 1.0)
-                // console.log("pct: ", pct)
                 return `hsla(36, ${pct * 100}%, 63%, 0.5)`
             }
 
@@ -267,6 +266,7 @@
 
         function onDataLoad(loadedStationData, loadedTripsData) {
             console.log("ready() called")
+            console.log("LOADED TRIPS DATA: ", loadedTripsData)
             // convert stationData to a id -> data map
 
             loadedStationData.forEach(v => {
@@ -290,7 +290,7 @@
                 })
 
 
-            timeSliceData = createTimeSliceData(loadedTripsData.slice(0, 50000), 1200)
+            timeSliceData = createTimeSliceData(loadedTripsData.slice(0, NUM_TRIPS_TO_USE), TIME_SLICE_DURATION)
             computeStationTraffic(loadedStationData, loadedTripsData)
 
             // Voronoi cells
