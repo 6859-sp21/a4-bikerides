@@ -36,7 +36,8 @@ function d3BindData(stationData, stationDataMap) {
 
     // Grab heatmap SVG group and set attributes
     var gHeatmap = d3.select("#heatmap")
-        .attr("fill", "none")
+        //.attr("fill", "none")
+        .attr("fill-opacity", 0.1)
         // .attr("stroke", "red")
         .attr("pointer-events", "all");
 
@@ -46,6 +47,7 @@ function d3BindData(stationData, stationDataMap) {
             enter => enter
                 .append("path")
                 .attr("d", polygonF)
+                .attr("id", function(d){ return "cell-" + d.metadata["station id"]})
                 .attr("fill", getStationColor),
             update => update
                 .attr("fill", getStationColor)
@@ -101,7 +103,7 @@ function computeStationTraffic(stationData, tripsData) {
     console.log("Done computing station traffic...")
 }
 
-// Given the a subset of the raw trip-level dataset, calculate aggregate metrics for time slices of the 
+// Given the a subset of the raw trip-level dataset, calculate aggregate metrics for time slices of the
 // specified duration
 // @param: sliceDuration - duration of a slice in minutes
 function createTimeSliceData(tripsData, sliceDuration, numSlices) {
