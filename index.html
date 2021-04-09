@@ -5,6 +5,12 @@
    <meta charset="utf-8">
    <title>Pulse of the City | Blue Bikes </title>
    <script src="https://d3js.org/d3.v6.js"></script>
+   
+   <script src="https://d3js.org/d3-voronoi.v1.min.js"></script>
+   <script src="https://unpkg.com/d3-simple-slider"></script>
+   
+   <script src="heatmap_slider.js"></script>
+   <script src="heatmap.js"></script>
 
    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
       integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
@@ -92,7 +98,6 @@
             var tripsData, stationData;
             var selectedStation = null;
 
-            
             // Draw the map
             mapboxgl.accessToken = 'pk.eyJ1IjoiY2hld3ljaGxvZSIsImEiOiJjajJiZ2g5YXQwMHYxMzJvODQxN245Z2RhIn0.ZJfu5XA9ij2_nBlZx2dcNg';
             var map = new mapboxgl.Map({
@@ -119,6 +124,12 @@
               return map.project(new mapboxgl.LngLat(+d.longitude, +d.latitude));
             }
             
+            // Set up other SVG groups now
+            svg.insert("g", ":first-child")
+               .attr("id", "stations")
+            
+            svg.insert("g", ":first-child")
+               .attr("id", "heatmap")
             
             // Parse the data and update markers
             d3.csv('https://raw.githubusercontent.com/6859-sp21/a4-bikerides/main/bluebikes_2020_stations.csv').then(function(csv)  {
@@ -256,6 +267,20 @@
                   //console.log(tripsData);
                   computeTotalTraffic();
                   updateMarkersTotalTraffic();
+                  
+                  // Set up heatmap
+                  {
+                     setupHeatmap(stationData, tripsData)
+                     
+                     function onMapUpdate() {
+                        console.log("On map update")
+                        d3BindData(stationData, stationDataMap)
+                     }
+                     
+                     map.on("viewreset", onMapUpdate);
+                     map.on("move", onMapUpdate);
+                     map.on("moveend", onMapUpdate);
+                  }
 
                });
             
@@ -351,47 +376,6 @@
             
         </script>
 
-   <script src="https://d3js.org/d3-voronoi.v1.min.js"></script>
-   <script src="https://unpkg.com/d3-simple-slider"></script>
-
-   <script src="heatmap_slider.js"></script>
-   <script src="heatmap.js"></script>
-
-   <script>
-      // Set up other SVG groups now
-      svg.insert("g", ":first-child")
-         .attr("id", "stations")
-
-      svg.insert("g", ":first-child")
-         .attr("id", "heatmap")
-
-      // Load the Bluebike dataset
-      var files = []
-      files.push("https://raw.githubusercontent.com/6859-sp21/a4-bikerides/main/bluebikes_2020_stations.csv")
-      // files.push("https://raw.githubusercontent.com/6859-sp21/a4-bikerides/main/bluebikes_2020.csv")
-      files.push("https://raw.githubusercontent.com/6859-sp21/a4-bikerides/bdnwang-voronoi/data/201909-bluebikes-tripdata.csv")
-
-      var promises = []
-
-      files.forEach(url => {
-         promises.push(d3.csv(url))
-      })
-
-      // Initialize the heatmap with the dataset
-      Promise.all(promises).then(values => {
-         setupHeatmap(values[0], values[1])
-
-         function onMapUpdate() {
-            console.log("On map update")
-            d3BindData(stationData, stationDataMap)
-         }
-
-         map.on("viewreset", onMapUpdate);
-         map.on("move", onMapUpdate);
-         map.on("moveend", onMapUpdate);
-      })
-
-   </script>
 </body>
 
 </html>
