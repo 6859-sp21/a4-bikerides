@@ -22,7 +22,7 @@
 
    <style>
       #map-container {
-         height: 780px;
+         height: 800px;
          width: 100%;
       }
 
@@ -56,14 +56,49 @@
             stroke-width: 4px;
          }
    </style>
+   <style>
+      .map-overlay {
+      fill-opacity: 0.9;
+      position: absolute;
+      width: 20%;
+      top: 20px;
+      left: 10px;
+      padding: 10px;
+      z-index: 98;
+      background-color: #fff;
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 10px;
+      }
+
+      .map-sidebar input {
+      display: inline-block;
+      width: 100%;
+      position: relative;
+      margin: 0;
+      cursor: pointer;
+      }
+      .map-sidebar {
+      background-color: #fff;
+      fill-opacity: 0.9;
+      position: absolute;
+      width: 20%;
+      top: 20px;
+      right: 10px;
+      padding: 10px;
+      z-index: 98;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      }
+   </style>
 </head>
 
 <body>
    <div class="row">
-      <div class="col-9">
-         <div id="map-container"></div>
-      </div>
-      <div class="col-3">
+      <div id="map-container"></div>
+   </div>
+   <div class="map-overlay top">
+      <div class="map-overlay-inner">
          <br>
          <h3>Pulse of the City | Blue Bikes </h3></br>
          <p> Bluebikes is Metro Boston's public bike share program, with more than 1,800 bikes at over 200 stations
@@ -74,29 +109,30 @@
             2020 data published by Bluebikes are used to visualize this map. </p>
          <p><b>Circle sizes</b> indicate the overall volume of traffic at each bike station.</p>
 
-         <p><b>Colors</b> indicate the relative proportions of people <b style="color:darkblue">arriving</b> and <b
+         <p><b>Colors</b> indicate the relative proportions of people <b style="color:blue">arriving</b> and <b
                style="color:darkorange">leaving</b> each station.</p>
 
          <p><b>Click on a station</b> to view traffic at all stations originating or terminating at the selected
             station. Circles are rescaled and recolored to show the volume of riders for each station that are <b
-               style="color:darkblue">arriving</b> at or <b style="color:darkorange">leaving</b> the selected station.
+               style="color:blue">arriving</b> at or <b style="color:darkorange">leaving</b> the selected station.
          </p>
       </div>
+      </div>
+      <div class="map-sidebar">
+            <div class="map-overlay-inner" >
+         <h3><label id="slider-time-val"></label></h3>
+         <input id="slider" type="range" min="0" max="24" value="12">
+         <label id="slider-trip-count"></label>
+         </div>
    </div>
-
-   <div class="row align-items-center">
-      <div class="col-9">
-         <div id="slider-simple"></div>
-      </div>
-      <div class="col-3">
-          <p id="value-simple"></p>
-      </div>
-  </div>
 
         <script>
             
             var tripsData, stationData;
             var selectedStation = null;
+            
+
+
 
             // Draw the map
             mapboxgl.accessToken = 'pk.eyJ1IjoiY2hld3ljaGxvZSIsImEiOiJjajJiZ2g5YXQwMHYxMzJvODQxN245Z2RhIn0.ZJfu5XA9ij2_nBlZx2dcNg';
@@ -104,7 +140,7 @@
                container: 'map-container',
                style: 'mapbox://styles/mapbox/light-v10',
                center: [-71.0942,42.3601],
-               zoom: 12,
+               zoom: 12.5,
                minZoom: 12,
                maxZoom: 15,
             });
@@ -191,9 +227,9 @@
                   .data(stationData)
                   .enter()
                   .append("circle")
-                  .attr("r", 1)
-                  .style("fill", "#3388ff")
-                  .attr("stroke", "#3388ff")
+                  .attr("r", 5)
+                  .style("fill", "#808080")
+                  .attr("stroke", "#808080")
                   .attr("stroke-width", 1)
                   .attr("fill-opacity", 0.4)
                   .attr("class", "circle")
@@ -263,7 +299,52 @@
                //console.log(stationData);
                
                d3.csv('https://raw.githubusercontent.com/6859-sp21/a4-bikerides/main/bluebikes_2020.csv').then(function(csv) {
-                  tripsData = csv;
+                  tripsDataFull = csv;
+                  
+               function updateSlider(value) {
+                  sliderTimeScale = d3
+                    .scaleTime()
+                    .domain([0, 24])
+                    .range([new Date("2019-12-01 00:00"), new Date("2019-12-01 24:00")])
+                  var sliderTime = sliderTimeScale(value);
+                   
+                  // Set the label to the month
+                  document.getElementById('slider-time-val').textContent =
+                     sliderTime.toLocaleTimeString();
+                  return sliderTime.toLocaleTimeString();
+               }
+               document
+                  .getElementById('slider')
+                  .addEventListener('input', function (e) {
+                     var value = parseInt(e.target.value);
+                     console.log("slider value: " + value )
+                     updateSlider(value);
+                     newTripsData = filterTrips(value, 2);
+                     tripsData = newTripsData;
+                     computeTotalTraffic();
+                     if (selectedStation == null) {
+                        updateMarkersTotalTraffic();
+                     }
+                     else {
+                        computeStationOnlyTraffic(selectedStation.attr("stationId"));
+                        updateMarkersStationTraffic();
+                        setTimeout(() => { setMarkerAppearanceSelected(selectedStation) }, 1500);
+                     }
+                  });
+               function filterTrips(value, window) {
+                  return tripsDataFull.filter(function(trip) {
+                     tripStartTime = new Date(trip['starttime']);
+                     tripEndTime = new Date(trip['stoptime']);
+                     filterStartTime = new Date(tripStartTime.getTime());
+                     filterEndTime = new Date(tripEndTime.getTime());
+                     filterStartTime.setHours(value-(window/2));
+                     filterEndTime.setHours(value+(window/2));
+                     return ((tripStartTime >= filterStartTime && tripStartTime <= filterEndTime) ||
+                        (tripEndTime >= filterStartTime && tripEndTime <= filterEndTime));
+                  })
+               }
+               updateSlider(12);
+               tripsData = filterTrips(12, 2);
 
                   // Set up heatmap
                   {
@@ -278,13 +359,9 @@
                      map.on("move", onMapUpdate);
                      map.on("moveend", onMapUpdate);
                   }
-                  
-                  //console.log(tripsData);
                   computeTotalTraffic();
                   updateMarkersTotalTraffic();
-
                });
-            
             });
             
             function addStationMarkers() {
@@ -300,6 +377,8 @@
             function computeTotalTraffic() {
                var arrivals = {};
                var departures = {};
+               document.getElementById('slider-trip-count').textContent =
+                        tripsData.length + " trips in this time window.";
                for(var i = 0; i < tripsData.length; ++i){
                    if (arrivals[tripsData[i]['end station id']] >= 0)
                      arrivals[tripsData[i]['end station id']]++;
@@ -311,8 +390,8 @@
                      departures[tripsData[i]['start station id']] = 1
                }
                stationData.forEach(function(d) {
-                  d.arrivals = arrivals[ d['station id'] ];
-                  d.departures = departures[ d['station id'] ];
+                  d.arrivals = arrivals[ d['station id'] ] || 0;
+                  d.departures = departures[ d['station id'] ] || 0;
                // Too slow and inefficient:
                 //d.arrivals = tripsData.filter(trip => (trip['end station id'] == d['station id'])).length;
                 //d.departures = tripsData.filter(trip => (trip['start station id'] == d['station id'])).length;
@@ -337,44 +416,46 @@
                      departures[stationSpecificTripsData[i]['start station id']] = 1
                }
                stationData.forEach(function(d) {
-                  d.specificArrivals = arrivals[ d['station id'] ];
-                  d.specificDepartures = departures[ d['station id'] ];
+                  d.specificArrivals = arrivals[ d['station id'] ] || 0;
+                  d.specificDepartures = departures[ d['station id'] ] || 0;
                })
                
             }
             
             function updateMarkersTotalTraffic() {
+                maxTraffic = Math.max(...stationData.map(o => (o.arrivals + o.departures) ), 0);
+                radiusDomain = Math.max(maxTraffic, 500);
               stationData.forEach(function(d) {
                  var scaleRadius = d3.scaleSqrt()
-                    .domain([0, 1000])
-                    .range([0, 10]);
+                    .domain([0, 1, radiusDomain])
+                    .range([0, 3, 20]);
                   newRadius = scaleRadius(d.arrivals + d.departures) ;
                   scaleColor = d3.scaleLinear()
-                    .domain([0, 0.40, 0.60, 1])
+                    .domain([0, 0.35, 0.65, 1])
                     .range(['darkorange', 'orange', 'blue', 'darkblue']);
+                    //.range(['darkgreen', 'green', 'blue', 'darkblue']);
                   newColor = scaleColor(d.arrivals*1.0 /(d.arrivals + d.departures));
                   d3.select("#station-"+d['station id']).transition().duration(1000).attr("r", newRadius).style("fill", newColor)
                   .attr("stroke", newColor).end();
-                  
                   d3.select("#cell-"+d['station id']).transition().duration(1000).style("fill", newColor);
               })
             }
             
             function updateMarkersStationTraffic() {
+                maxTraffic = Math.max(...stationData.map(o => (o.specificArrivals + o.specificDepartures) ), 0);
               stationData.forEach(function(d) {
                  var scaleRadius = d3.scaleSqrt()
-                    .domain([0, 50])
-                    .range([0, 10]);
-                  newRadius = Math.min(scaleRadius(d.specificArrivals + d.specificDepartures), 25)
+                    .domain([0, maxTraffic/15])
+                    .range([0, 15]);
+                  newRadius = Math.min(scaleRadius(d.specificArrivals + d.specificDepartures), 20);
                   if (isNaN(newRadius) )
                      newRadius = 0;
                   scaleColor = d3.scaleLinear()
-                    .domain([0, 0.40, 0.60, 1])
+                    .domain([0, 0.35, 0.65, 1])
                     .range(['darkorange', 'orange', 'blue', 'darkblue']);
                   newColor = scaleColor(d.specificArrivals*1.0 /(d.specificArrivals + d.specificDepartures));
                   d3.select("#station-"+d['station id']).transition().duration(1000).attr("r", newRadius).style("fill", newColor)
                   .attr("stroke", newColor).end();
-                  
                   d3.select("#cell-"+d['station id']).transition().duration(1000).style("fill", newColor);
               })
             }

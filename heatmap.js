@@ -268,7 +268,7 @@ function setupHeatmap(loadedStationData, loadedTripsData) {
     tripsData = loadedTripsData
 
     console.log("timeSliceData passed to intiializeSlider: ", timeSliceData)
-    setupHeatmapSlider(timeSliceData, onSlider)
+    //setupHeatmapSlider(timeSliceData, onSlider)
 
     d3BindData(stationData, stationDataMap)
 }
