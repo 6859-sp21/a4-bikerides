@@ -92,6 +92,24 @@
       border-radius: 10px;
       margin-bottom: 10px;
       }
+
+      #play-button {
+      background: #88D840;
+      padding-right: 26px;
+      border-radius: 3px;
+      border: none;
+      color: white;
+      margin: 0;
+      padding: 0 12px;
+      width: 60px;
+      cursor: pointer;
+      height: 30px;
+    }
+
+    #play-button:hover {
+      background-color: #696969;
+    }    
+    
    </style>
 </head>
 
@@ -124,6 +142,9 @@
          <input id="slider" type="range" min="0" max="24" value="12">
          <label id="slider-trip-count"></label>
          </div>
+         <div id="vis">
+            <button id="play-button">Play</button>
+          </div>
    </div>
 
         <script>
@@ -345,6 +366,24 @@
                }
                updateSlider(12);
                tripsData = filterTrips(12, 2);
+               
+               // Automate results via Play button
+               var playButton = d3.select("#play-button");
+                     playButton
+                        .on("click", function() {
+                        var button = d3.select(this);
+                        if (button.text() == "Pause") {
+                           moving = false;
+                           clearInterval(timer);
+                           // timer = 0;
+                           button.text("Play");
+                        } else {
+                           moving = true;
+                           timer = setInterval(step, 100);
+                           button.text("Pause");
+                        }
+                        console.log("Slider moving: " + moving);
+                     })
 
                   // Set up heatmap
                   {
