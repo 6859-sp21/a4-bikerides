@@ -140,7 +140,7 @@
       <div class="map-sidebar">
             <div class="map-overlay-inner" >
          <h4><label id="slider-time-val"></label></h4>
-         <input id="slider" type="range" min="0" max="24" value="12">
+         <input id="slider" type="range" min="0" max="1440" value="720">
          <label id="slider-trip-count"></label>
          </div>
          <div id="vis">
@@ -202,11 +202,11 @@
                   
                   function updateSlider(value) {
                      sliderTimeScale = d3.scaleTime()
-                       .domain([0, 24])
+                       .domain([0, 1440])
                        .range([new Date("2019-12-01 00:00"), new Date("2019-12-02 00:00")])
                      let sliderTime = sliderTimeScale(value);
                      document.getElementById('slider-time-val').textContent =
-                        sliderTime.toLocaleTimeString();
+                        sliderTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
                      return sliderTime;
                   }
                   document
@@ -227,7 +227,7 @@
                         }
                      });
 
-               let filterDate = updateSlider(12);
+               let filterDate = updateSlider(document.getElementById("slider").value);
                tripsData = filterTrips(filterDate, FILTER_TIME_WINDOW_HOURS, FILTER_TIME_WINDOW_MINUTES);
                
                // Automate results via Play button
