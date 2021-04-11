@@ -75,7 +75,7 @@ function d3BindData(stationData, stationDataMap) {
         let pct = colorValue / 20
 
         pct = Math.min(pct, 1.0)
-        return `hsla(36, ${pct * 100}%, 63%, 0.7)`
+        return `hsla(36, 0%, 0%, 0.0)`
     }
 
     function polygonF(d) {

@@ -149,7 +149,8 @@
    </div>
 
         <script>
-            
+            const FILTER_TIME_WINDOW_HOURS = 0;
+            const FILTER_TIME_WINDOW_MINUTES = 120;
             var tripsData, stationData;
             var selectedStation = null;
             var tooltip = d3.select("body").append("div")
@@ -166,7 +167,6 @@
                minZoom: 12,
                maxZoom: 15,
             });
-            
             // appending data to map
             var container = map.getCanvasContainer();
             var svg = d3
@@ -196,8 +196,6 @@
                map.on("viewreset", addStationMarkers);
                map.on("move", addStationMarkers);
                map.on("moveend", addStationMarkers);
-               //map.on("click", clearMarkerSelections);
-               //console.log(stationData);
                
                d3.csv('https://raw.githubusercontent.com/6859-sp21/a4-bikerides/main/bluebikes_2020.csv').then(function(csv) {
                   tripsDataFull = csv;
@@ -209,14 +207,14 @@
                      let sliderTime = sliderTimeScale(value);
                      document.getElementById('slider-time-val').textContent =
                         sliderTime.toLocaleTimeString();
-                     return sliderTime.toLocaleTimeString();
+                     return sliderTime;
                   }
                   document
                      .getElementById('slider')
                      .addEventListener('input', function (e) {
                         let value = parseInt(e.target.value);
-                        updateSlider(value);
-                        newTripsData = filterTrips(value, 2);
+                        let filterDate = updateSlider(value);
+                        newTripsData = filterTrips(filterDate, FILTER_TIME_WINDOW_HOURS, FILTER_TIME_WINDOW_MINUTES);
                         tripsData = newTripsData;
                         computeTotalTraffic();
                         if (selectedStation == null) {
@@ -228,20 +226,9 @@
                            setTimeout(() => { setMarkerAppearanceSelected(selectedStation) }, 1500);
                         }
                      });
-               function filterTrips(value, window) {
-                  return tripsDataFull.filter(function(trip) {
-                     tripStartTime = new Date(trip['starttime']);
-                     tripEndTime = new Date(trip['stoptime']);
-                     filterStartTime = new Date(tripStartTime.getTime());
-                     filterEndTime = new Date(tripEndTime.getTime());
-                     filterStartTime.setHours(value-(window/2));
-                     filterEndTime.setHours(value+(window/2));
-                     return ((tripStartTime >= filterStartTime && tripStartTime <= filterEndTime) ||
-                        (tripEndTime >= filterStartTime && tripEndTime <= filterEndTime));
-                  })
-               }
-               updateSlider(12);
-               tripsData = filterTrips(12, 2);
+
+               let filterDate = updateSlider(12);
+               tripsData = filterTrips(filterDate, FILTER_TIME_WINDOW_HOURS, FILTER_TIME_WINDOW_MINUTES);
                
                // Automate results via Play button
                var playButton = d3.select("#play-button");
@@ -273,6 +260,22 @@
                });
             });
             
+            function filterTrips(value, filterWindowHours, filterWindowMinutes) {
+               let filterHours = value.getHours();
+               let filterMinutes = value.getMinutes();
+               return tripsDataFull.filter(function(trip) {
+                  tripStartTime = new Date(trip['starttime']);
+                  tripEndTime = new Date(trip['stoptime']);
+                  filterStartTime = new Date(tripStartTime.getTime());
+                  filterEndTime = new Date(tripEndTime.getTime());
+                  filterStartTime.setHours(filterHours-(filterWindowHours/2));
+                  filterEndTime.setHours(filterHours+(filterWindowHours/2));
+                  filterStartTime.setMinutes(filterMinutes-(filterWindowMinutes/2));
+                  filterEndTime.setMinutes(filterMinutes+(filterWindowMinutes/2));
+                  return ((tripStartTime >= filterStartTime && tripStartTime <= filterEndTime) ||
+                     (tripEndTime >= filterStartTime && tripEndTime <= filterEndTime));
+               })
+            }
             
             function computeTotalTraffic() {
                var arrivals = {};
