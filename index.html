@@ -58,40 +58,46 @@
          }
    </style>
    <style>
-      .map-overlay {
+      .map-overlay-left {
       font-size:0.9em;
       fill-opacity: 0.9;
       position: absolute;
       width: 25%;
-      top: 20px;
-      left: 10px;
+      top: 10px;
+      left: 0;
       padding: 10px;
       z-index: 98;
+      }
+      .map-overlay-left .map-overlay-left-inner {
       background-color: #fff;
       border-radius: 10px;
       padding: 10px;
       margin-bottom: 10px;
       }
 
-      .map-sidebar input {
+      .map-overlay-right input {
       display: inline-block;
       width: 100%;
       position: relative;
       margin: 0;
       cursor: pointer;
       }
-      .map-sidebar {
+      .map-overlay-right {
       font-size:0.9em;
-      background-color: #fff;
       fill-opacity: 0.9;
       position: absolute;
       width: 20%;
-      top: 20px;
-      right: 10px;
+      top: 10px;
+      right: 0;
       padding: 10px;
       z-index: 98;
+      }
+      .map-overlay-right .map-overlay-right-inner {
+      background-color: #fff;
       border-radius: 10px;
+      padding: 10px;
       margin-bottom: 10px;
+      float: right;
       }
 
       #play-button {
@@ -116,8 +122,8 @@
 
 <body>
    <div id="map-container"></div>
-   <div class="map-overlay top">
-      <div class="map-overlay-inner">
+   <div class="map-overlay-left">
+      <div class="map-overlay-left-inner">
          <br>
          <h3>Pulse of the City | Blue Bikes </h3></br>
          <p> Bluebikes is Metro Boston's public bike share program, with more than 1,800 bikes at over 200 stations
@@ -136,23 +142,58 @@
                style="color:blue">arriving</b> at or <b style="color:darkorange">leaving</b> the selected station.
          </p>
       </div>
-      </div>
-      <div class="map-sidebar">
-            <div class="map-overlay-inner" >
+   </div>
+   <div class="map-overlay-right">
+      <div class="map-overlay-right-inner" >
          <h4><label id="slider-time-val"></label></h4>
          <input id="slider" type="range" min="0" max="1440" value="720">
          <label id="slider-trip-count"></label>
-         </div>
-         <div id="vis">
+      <div id="vis">
             <button id="play-button">Play</button>
-          </div>
+      </div>
+      </div>
+      <div class="map-overlay-right-inner" >
+         <select id="test">
+        <option value="None">None</option>
+    </select>
+      </div>
    </div>
 
         <script>
             const FILTER_TIME_WINDOW_HOURS = 0;
             const FILTER_TIME_WINDOW_MINUTES = 120;
+
             var tripsData, stationData;
-            var selectedStation = null;
+            
+            var selectedStation = {
+               select(stationId) {
+                  this.stationId = stationId,
+                  this.data = stationData.find(d => d.stationId == stationId),
+                  this.bubble = d3.select("#station-"+stationId),
+                  this.cell = d3.select("#cell-"+stationId)
+               },
+               clear() {
+                  this.stationId = null,
+                  this.data = null,
+                  this.bubble = null,
+                  this.cell = null
+               },
+               stationId : null,
+               data : null,
+               bubble : null,
+               cell : null,
+            }
+            
+            const dataOptions = {
+            	NONE: "none",
+            	TRAFFIC_VOLUME: "trafficVolume",
+            	TRAFFIC_ARR_DEP: "trafficArriveDepart",
+            }
+            var visualizationSettings = {
+               bubbleSize: dataOptions.TRAFFIC_VOLUME,
+               bubbleColor: dataOptions.TRAFFIC_ARR_DEP,
+               heatmapColor: dataOptions.TRAFFIC_ARR_DEP
+            }
             var tooltip = d3.select("body").append("div")
                .attr("class", "tooltip")
                .style("opacity", 0);
@@ -217,13 +258,13 @@
                         newTripsData = filterTrips(filterDate, FILTER_TIME_WINDOW_HOURS, FILTER_TIME_WINDOW_MINUTES);
                         tripsData = newTripsData;
                         computeTotalTraffic();
-                        if (selectedStation == null) {
+                        if (selectedStation.stationId == null) {
                            updateMarkersTotalTraffic();
                         }
                         else {
-                           computeStationOnlyTraffic(selectedStation.attr("stationId"));
+                           computeStationOnlyTraffic(selectedStation.stationId);
                            updateMarkersStationTraffic();
-                           setTimeout(() => { setMarkerAppearanceSelected(selectedStation) }, 1500);
+                           setTimeout(() => { setMarkerAppearanceSelected(selectedStation.bubble) }, 1500);
                         }
                      });
 

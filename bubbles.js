@@ -2,11 +2,11 @@
          
 function clearMarkerSelections() {
    //setMarkerAppearanceUnselected(d3.selectAll("circle"));
-   if (window['selectedStation'] != null) {
-      window['selectedStation'].classed("selected", false);
-      setMarkerAppearanceUnselected(window['selectedStation']);
+   if (selectedStation.stationId !== null) {
+      selectedStation.bubble.classed("selected", false);
+      setMarkerAppearanceUnselected(selectedStation.bubble);
    }
-   window['selectedStation'] = null;
+   selectedStation.clear();
 }
 
 function setMarkerAppearanceSelected(marker) {
@@ -79,7 +79,7 @@ function setUpBubbles() {
                d3.select(this).style("cursor", "pointer");
                 if (!d3.select(this).classed("selected") ){
                 var tooltipText ;
-                if (selectedStation == null) {
+                if (selectedStation.stationId == null) {
                    tooltipText =
                   "<b>"+d['station name']+"</b><br/>"
                   + (+d.arrivals + d.departures) + " riders" +"<br/>"
@@ -89,7 +89,7 @@ function setUpBubbles() {
                 else {
                    tooltipText =
                   "<b>"+d['station name']+"</b><br/>"
-                  + "<i>From / to " + selectedStation.attr("stationName") +"</i><br/>"
+                  + "<i>From / to " + selectedStation.bubble.attr("stationName") +"</i><br/>"
                   + (+d.specificArrivals +d.specificDepartures)+" riders " +"<br/>"
                   + "(" + d.specificArrivals + " arriving from, "
                   + d.specificDepartures + " leaving to)";
@@ -111,14 +111,14 @@ function setUpBubbles() {
          if (!d3.select(this).classed("selected") ){
             d3.select(this).classed("selected", true);
             clearMarkerSelections();
-            selectedStation = d3.select(this);
+            selectedStation.select(d['station id']);
             hideTooltip();
             computeStationOnlyTraffic(d['station id']);
             updateMarkersStationTraffic();
             setTimeout(() => { setMarkerAppearanceSelected(d3.select(this)) }, 1000);
         }else{
            d3.select(this).classed("selected", false);
-           selectedStation = null;
+           selectedStation.clear();
            setMarkerAppearanceUnselected(d3.select(this));
            updateMarkersTotalTraffic();
         }
