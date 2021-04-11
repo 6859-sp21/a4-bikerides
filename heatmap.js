@@ -28,10 +28,10 @@ function d3BindData(stationData, stationDataMap) {
         return
     }
 
-    sliceData = timeSliceData[currentTimeSliceIndex][1]
+    //sliceData = timeSliceData[currentTimeSliceIndex][1]
 
-    console.log("d3JoinData() called.")
-    console.log("sliceData: ", sliceData)
+    //console.log("d3JoinData() called.")
+    //console.log("sliceData: ", sliceData)
     // Voronoi guide: https://observablehq.com/@mbostock/u-s-airports-voronoi
 
     // Grab heatmap SVG group and set attributes
@@ -47,7 +47,7 @@ function d3BindData(stationData, stationDataMap) {
             enter => enter
                 .append("path")
                 .attr("d", polygonF)
-                .attr("id", function(d){ return "cell-" + d.metadata["station id"]})
+                .attr("id", function(d){ return "cell-" + d.metadata["station id"]}),
                 .attr("fill", getStationColor),
             update => update
                 .attr("fill", getStationColor)
@@ -67,7 +67,7 @@ function d3BindData(stationData, stationDataMap) {
         let stationID = d.metadata["station id"]
         let stationData = stationDataMap.get(stationID)
 
-        let colorValue = sliceData.get(stationID)
+        //let colorValue = sliceData.get(stationID)
         if (colorValue == null) {
             colorValue = 0
         }
@@ -244,7 +244,7 @@ function setupHeatmap(loadedStationData, loadedTripsData) {
     //     });
 
 
-    timeSliceData = createTimeSliceData(loadedTripsData.slice(0, NUM_TRIPS_TO_USE), TIME_SLICE_DURATION, NUM_SLICES)
+   // timeSliceData = createTimeSliceData(loadedTripsData.slice(0, NUM_TRIPS_TO_USE), TIME_SLICE_DURATION, NUM_SLICES)
     // computeStationTraffic(loadedStationData, loadedTripsData)
 
     // Voronoi cells
