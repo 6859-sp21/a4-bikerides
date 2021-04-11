@@ -273,3 +273,7 @@ function setupHeatmap(loadedStationData, loadedTripsData) {
     d3BindData(stationData, stationDataMap)
 }
 
+function onMapUpdate() {
+   console.log("On map update")
+   d3BindData(stationData, stationDataMap)
+}

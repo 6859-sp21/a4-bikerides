@@ -193,7 +193,6 @@
                   stationData = csv;
 
                setUpBubbles();
-               
                map.on("viewreset", addStationMarkers);
                map.on("move", addStationMarkers);
                map.on("moveend", addStationMarkers);
@@ -265,12 +264,6 @@
                   // Set up heatmap
                   {
                      setupHeatmap(stationData, tripsData)
-                     
-                     function onMapUpdate() {
-                        console.log("On map update")
-                        d3BindData(stationData, stationDataMap)
-                     }
-                     
                      map.on("viewreset", onMapUpdate);
                      map.on("move", onMapUpdate);
                      map.on("moveend", onMapUpdate);
@@ -351,7 +344,7 @@
             function updateMarkersStationTraffic() {
                 maxTraffic = Math.max(...stationData.map(o => (o.specificArrivals + o.specificDepartures) ), 0);
               stationData.forEach(function(d) {
-                  let newRadius = 0, newColor = "";
+                  let newRadius = 0, newColor = "hsla(0, 0%, 0%, 0.0)";
                   if (d.specificArrivals > 0 || d.specificDepartures > 0) {
                      var scaleRadius = d3.scaleSqrt()
                        .domain([0, maxTraffic/15])
@@ -362,7 +355,6 @@
                        .range(['darkorange', 'orange', 'blue', 'darkblue']);
                      newColor = scaleColor(d.specificArrivals*1.0 /(d.specificArrivals + d.specificDepartures));
                   }
-                  console.log(newColor);
                   d3.select("#station-"+d['station id']).transition().duration(1000).attr("r", newRadius).style("fill", newColor)
                   .attr("stroke", newColor).end();
                   d3.select("#cell-"+d['station id']).transition().duration(1000).style("fill", newColor);
