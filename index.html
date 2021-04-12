@@ -59,16 +59,18 @@
    </style>
    <style>
       .map-overlay-left {
-      font-size:0.9em;
+      font-size:1em;
       fill-opacity: 0.9;
       position: absolute;
-      width: 25%;
+      width: 33%;
       top: 10px;
       left: 0;
       padding: 10px;
       z-index: 98;
       }
       .map-overlay-left .map-overlay-left-inner {
+      border: none;
+      outline:none;
       background-color: #fff;
       border-radius: 10px;
       padding: 10px;
@@ -124,14 +126,13 @@
    <div id="map-container"></div>
    <div class="map-overlay-left">
       <div class="map-overlay-left-inner">
-         <br>
-         <h3>Pulse of the City | Blue Bikes </h3></br>
-         <p> Bluebikes is Metro Boston's public bike share program, with more than 1,800 bikes at over 200 stations
+         <button type="button" class="map-overlay-left-inner" id="overlay-collapsible" onclick="toggleCollapsibleOverlay()" style="float:right">+/-</button>
+         <h3>Pulse of the City | Blue Bikes </h3>
+         <div id="overlay-collapsible-content" style="display:block" ><p> Bluebikes is Metro Boston's public bike share program, with more than 1,800 bikes at over 200 stations
             across Boston, Brookline, Cambridge, Somerville and Everett.
             Bluebikes is owned by the municipalities of Boston, Brookline, Cambridge, Somerville and Everett, and
             operated by Motivate.
-            The team was interested in shared bikeflows, and how that changed during the pandemic. December 2019 and
-            2020 data published by Bluebikes are used to visualize this map. </p>
+            The team was interested in shared bikeflows, and the December 2019 data published by Bluebikes are used to visualize this map. </p>
          <p><b>Circle sizes</b> indicate the overall volume of traffic at each bike station.</p>
 
          <p><b>Colors</b> indicate the relative proportions of people <b style="color:blue">arriving</b> and <b
@@ -140,9 +141,14 @@
          <p><b>Click on a station</b> to view traffic at all stations originating or terminating at the selected
             station. Circles are rescaled and recolored to show the volume of riders for each station that are <b
                style="color:blue">arriving</b> at or <b style="color:darkorange">leaving</b> the selected station.
-         </p>
+         </p></div>
+      </div>
+      <div class="map-overlay-left-inner" id="station-infobox" style="display:none">
+         <label id="stationInfoboxTitle"></label>
+         <label id="stationInfoboxContent"></label>
       </div>
    </div>
+
    <div class="map-overlay-right">
       <div class="map-overlay-right-inner" >
          <h4><label id="slider-time-val"></label></h4>
@@ -172,7 +178,7 @@
         <option value="trafficVolume" selected="selected">Traffic volume</option>
         <option value="trafficArriveDepart" selected="selected">Traffic flow</option>
     </select></div>
-      <div display=block><button onclick="resetViews()">Reset view</button></div>
+      <div display=block><button onclick="resetViews()">Reset views</button></div>
       </div>
    </div>
 
@@ -180,7 +186,7 @@
             const FILTER_TIME_WINDOW_HOURS = 0;
             const FILTER_TIME_WINDOW_MINUTES = 120;
             const ANIMATION_DURATION = 1000;
-            const BUBBLE_SIZE_DEFAULT = 10;
+            const BUBBLE_SIZE_DEFAULT = 8;
             const BUBBLE_COLOR_DEFAULT = "#808080";
             const HEATMAP_COLOR_DEFAULT = "hsla(0, 0%, 0%, 0.0)";
 
@@ -217,6 +223,14 @@
                heatmapColor: dataOptions.TRAFFIC_ARR_DEP
             }
             
+            function toggleCollapsibleOverlay (collapse = false) {
+               content = document.getElementById("overlay-collapsible-content");
+               if (content.style.display === "block") {
+                  content.style.display = "none";
+               } else {
+                  content.style.display = "block";
+               }
+            }
             document.getElementById("visualizationSettingsBubbleSize").addEventListener("change", function (e) {
                   visualizationSettings.bubbleSize = e.target.value;
                   updateMarkers();
@@ -230,6 +244,9 @@
                   updateMarkers();
                });
             function resetViews() {
+               document.getElementById("visualizationSettingsBubbleSize").value = dataOptions.TRAFFIC_VOLUME;
+               document.getElementById("visualizationSettingsBubbleColor").value = dataOptions.TRAFFIC_ARR_DEP;
+               document.getElementById("visualizationSettingsHeatmapColor").value = dataOptions.TRAFFIC_ARR_DEP;
                visualizationSettings.bubbleSize = dataOptions.TRAFFIC_VOLUME;
                visualizationSettings.bubbleColor = dataOptions.TRAFFIC_ARR_DEP;
                visualizationSettings.heatmapColor = dataOptions.TRAFFIC_ARR_DEP;
@@ -452,11 +469,11 @@
                      }
                      else if (visualizationSettings.heatmapColor == dataOptions.TRAFFIC_VOLUME) {
                         let newColor = scaleColorTrafficVolume(d.arrivals + d.departures);
-                        animateCell.style("fill", newColor);
+                        animateCell.style("fill", newColor).attr("fill-opacity", 0.4);
                      }
                      else if (visualizationSettings.heatmapColor == dataOptions.TRAFFIC_ARR_DEP) {
                         let newColor = scaleColorTrafficArriveDepart(d.arrivals, d.departures);
-                        animateCell.style("fill", newColor);
+                        animateCell.style("fill", newColor).attr("fill-opacity", 0.1);
                      }
                   })
                }
@@ -498,12 +515,12 @@
                         animateCell.style("fill", HEATMAP_COLOR_DEFAULT);
                      }
                      else if (visualizationSettings.heatmapColor == dataOptions.TRAFFIC_VOLUME) {
-                        let newColor = scaleColorTrafficVolume(d.specificArrivals + d.specificDepartures);
-                        animateCell.style("fill", newColor);
+                        let newColor = scaleColorTrafficVolume(d.specificArrivals + d.specificDepartures, maxTraffic);
+                        animateCell.style("fill", newColor).attr("fill-opacity", 0.4);
                      }
                      else if (visualizationSettings.heatmapColor == dataOptions.TRAFFIC_ARR_DEP) {
                         let newColor = scaleColorTrafficArriveDepart(d.specificArrivals, d.specificDepartures);
-                        animateCell.style("fill", newColor);
+                        animateCell.style("fill", newColor).attr("fill-opacity", 0.1);
                      }
                   })
                   setTimeout(() => { setMarkerAppearanceSelected(selectedStation.bubble) }, ANIMATION_DURATION+100);
@@ -512,11 +529,13 @@
             }
             
             function scaleRadiusTrafficVolume (traffic, maxTraffic = 500) {
+               let newRadius = 0;
                let radiusDomain = Math.max(maxTraffic, 500);
                scaleRadius = d3.scaleSqrt()
                   .domain([0, 1, radiusDomain])
                   .range([0, 3, 20]);
-               return scaleRadius(traffic) ;
+               newRadius = scaleRadius(traffic) ;
+               return newRadius;
             }
             
             function scaleRadiusStationTrafficVolume (traffic, maxTraffic = 100) {
@@ -529,19 +548,24 @@
             }
             
             function scaleColorTrafficVolume (traffic, maxTraffic=800) {
-               let newColor = "hsla(0, 0%, 0%, 0.0)";
-               let sequentialScale = d3.scaleLinear()
-                  .domain([0, maxTraffic])
-                  .range(['lightblue', 'darkblue']);
-               return sequentialScale(traffic);
+               let newColor = HEATMAP_COLOR_DEFAULT;
+               let trafficVolumeScale = d3.scaleLinear()
+                 .domain([0, maxTraffic])
+                 .range(['lightblue', 'blue']);
+               if (traffic > 0) {
+                  newColor = trafficVolumeScale(traffic);
+               }
+               return newColor;
             }
             
             function scaleColorTrafficArriveDepart (arrivals, departures) {
-               let newColor = "hsla(0, 0%, 0%, 0.0)";
+               let newColor = HEATMAP_COLOR_DEFAULT;
                scaleColor = d3.scaleLinear()
                   .domain([0, 0.35, 0.65, 1])
                   .range(['darkorange', 'orange', 'blue', 'darkblue']);
-               newColor = scaleColor(arrivals*1.0 /(arrivals + departures));
+               if (!isNaN(arrivals) && !isNaN(departures)) {
+                  newColor = scaleColor(arrivals*1.0 /(arrivals + departures));
+               }
                return newColor;
             }
             
