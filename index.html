@@ -156,20 +156,23 @@
          <div display=block>
          <label for="visualizationSettingsBubbleSize">Bubble size:</label>
          <select id="visualizationSettingsBubbleSize">
-         <option value="off">Remove bubbles</option>
         <option value="uniform">Uniform</option>
         <option value="trafficVolume" selected="selected">Traffic volume</option>
+        <option value="off">Remove bubbles</option>
         </select></div>
          <div display=block><label for="visualizationSettingsBubbleColor">Bubble color:</label>
          <select id="visualizationSettingsBubbleColor">
         <option value="off">Neutral</option>
+        <option value="trafficVolume" selected="selected">Traffic volume</option>
         <option value="trafficArriveDepart" selected="selected">Traffic flow</option>
     </select></div>
-      <div display=block><label for="visualizationSettingsHeatmapColor">Heatmap color:</label>
+      <div display=block><label for="visualizationSettingsHeatmapColor">Heatmap:</label>
          <select id="visualizationSettingsHeatmapColor">
         <option value="off">Off</option>
+        <option value="trafficVolume" selected="selected">Traffic volume</option>
         <option value="trafficArriveDepart" selected="selected">Traffic flow</option>
     </select></div>
+      <div display=block><button onclick="resetViews()">Reset view</button></div>
       </div>
    </div>
 
@@ -226,6 +229,16 @@
                   visualizationSettings.heatmapColor = e.target.value;
                   updateMarkers();
                });
+            function resetViews() {
+               visualizationSettings.bubbleSize = dataOptions.TRAFFIC_VOLUME;
+               visualizationSettings.bubbleColor = dataOptions.TRAFFIC_ARR_DEP;
+               visualizationSettings.heatmapColor = dataOptions.TRAFFIC_ARR_DEP;
+               if (selectedStation.stationId != null) {
+                  setMarkerAppearanceUnselected(selectedStation.bubble);
+               }
+               selectedStation.clear();
+               updateMarkers();
+            }
             
             var tooltip = d3.select("body").append("div")
                .attr("class", "tooltip")
@@ -250,7 +263,6 @@
               .attr("height", "100%")
               .style("position", "absolute")
               .style("z-index", 2);
-              
             function project(d) {
               return map.project(new mapboxgl.LngLat(+d.longitude, +d.latitude));
             }
@@ -425,6 +437,10 @@
                      if (visualizationSettings.bubbleColor == dataOptions.OFF) {
                         animateBubble.style("fill", BUBBLE_COLOR_DEFAULT).attr("stroke", BUBBLE_COLOR_DEFAULT);
                      }
+                     else if (visualizationSettings.bubbleColor == dataOptions.TRAFFIC_VOLUME) {
+                        let newColor = scaleColorTrafficVolume(d.arrivals + d.departures);
+                        animateBubble.style("fill", newColor).attr("stroke", newColor);
+                     }
                      else if (visualizationSettings.bubbleColor == dataOptions.TRAFFIC_ARR_DEP) {
                         let newColor = scaleColorTrafficArriveDepart(d.arrivals, d.departures);
                         animateBubble.style("fill", newColor).attr("stroke", newColor);
@@ -433,6 +449,10 @@
                      if (visualizationSettings.heatmapColor == dataOptions.OFF) {
                         console.log("heatmap off");
                         animateCell.style("fill", HEATMAP_COLOR_DEFAULT);
+                     }
+                     else if (visualizationSettings.heatmapColor == dataOptions.TRAFFIC_VOLUME) {
+                        let newColor = scaleColorTrafficVolume(d.arrivals + d.departures);
+                        animateCell.style("fill", newColor);
                      }
                      else if (visualizationSettings.heatmapColor == dataOptions.TRAFFIC_ARR_DEP) {
                         let newColor = scaleColorTrafficArriveDepart(d.arrivals, d.departures);
@@ -465,8 +485,11 @@
                      if (visualizationSettings.bubbleColor == dataOptions.OFF) {
                         animateBubble.style("fill", BUBBLE_COLOR_DEFAULT).attr("stroke", BUBBLE_COLOR_DEFAULT);
                      }
+                     if (visualizationSettings.bubbleColor == dataOptions.TRAFFIC_VOLUME) {
+                        let newColor = scaleColorTrafficVolume(d.specificArrivals + d.specificDepartures);
+                        animateBubble.style("fill", newColor).attr("stroke", newColor);
+                     }
                      if (visualizationSettings.bubbleColor == dataOptions.TRAFFIC_ARR_DEP) {
-                        
                         let newColor = scaleColorTrafficArriveDepart(d.specificArrivals, d.specificDepartures);
                         animateBubble.style("fill", newColor).attr("stroke", newColor);
                      }
@@ -474,12 +497,16 @@
                      if (visualizationSettings.heatmapColor == dataOptions.OFF) {
                         animateCell.style("fill", HEATMAP_COLOR_DEFAULT);
                      }
+                     else if (visualizationSettings.heatmapColor == dataOptions.TRAFFIC_VOLUME) {
+                        let newColor = scaleColorTrafficVolume(d.specificArrivals + d.specificDepartures);
+                        animateCell.style("fill", newColor);
+                     }
                      else if (visualizationSettings.heatmapColor == dataOptions.TRAFFIC_ARR_DEP) {
                         let newColor = scaleColorTrafficArriveDepart(d.specificArrivals, d.specificDepartures);
                         animateCell.style("fill", newColor);
                      }
                   })
-                  setTimeout(() => { setMarkerAppearanceSelected(selectedStation.bubble) }, 1100);
+                  setTimeout(() => { setMarkerAppearanceSelected(selectedStation.bubble) }, ANIMATION_DURATION+100);
                }
                
             }
@@ -499,6 +526,14 @@
                  .range([0, 3, 15]);
                newRadius = Math.min(scaleRadius(traffic), 20);
                return newRadius;
+            }
+            
+            function scaleColorTrafficVolume (traffic, maxTraffic=800) {
+               let newColor = "hsla(0, 0%, 0%, 0.0)";
+               let sequentialScale = d3.scaleLinear()
+                  .domain([0, maxTraffic])
+                  .range(['lightblue', 'darkblue']);
+               return sequentialScale(traffic);
             }
             
             function scaleColorTrafficArriveDepart (arrivals, departures) {
