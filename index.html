@@ -153,15 +153,33 @@
       </div>
       </div>
       <div class="map-overlay-right-inner" >
-         <select id="test">
-        <option value="None">None</option>
-    </select>
+         <div display=block>
+         <label for="visualizationSettingsBubbleSize">Bubble size:</label>
+         <select id="visualizationSettingsBubbleSize">
+         <option value="off">Remove bubbles</option>
+        <option value="uniform">Uniform</option>
+        <option value="trafficVolume" selected="selected">Traffic volume</option>
+        </select></div>
+         <div display=block><label for="visualizationSettingsBubbleColor">Bubble color:</label>
+         <select id="visualizationSettingsBubbleColor">
+        <option value="off">Neutral</option>
+        <option value="trafficArriveDepart" selected="selected">Traffic flow</option>
+    </select></div>
+      <div display=block><label for="visualizationSettingsHeatmapColor">Heatmap color:</label>
+         <select id="visualizationSettingsHeatmapColor">
+        <option value="off">Off</option>
+        <option value="trafficArriveDepart" selected="selected">Traffic flow</option>
+    </select></div>
       </div>
    </div>
 
         <script>
             const FILTER_TIME_WINDOW_HOURS = 0;
             const FILTER_TIME_WINDOW_MINUTES = 120;
+            const ANIMATION_DURATION = 1000;
+            const BUBBLE_SIZE_DEFAULT = 10;
+            const BUBBLE_COLOR_DEFAULT = "#808080";
+            const HEATMAP_COLOR_DEFAULT = "hsla(0, 0%, 0%, 0.0)";
 
             var tripsData, stationData;
             
@@ -185,7 +203,8 @@
             }
             
             const dataOptions = {
-            	NONE: "none",
+               OFF: "off",
+            	UNIFORM: "uniform",
             	TRAFFIC_VOLUME: "trafficVolume",
             	TRAFFIC_ARR_DEP: "trafficArriveDepart",
             }
@@ -194,6 +213,20 @@
                bubbleColor: dataOptions.TRAFFIC_ARR_DEP,
                heatmapColor: dataOptions.TRAFFIC_ARR_DEP
             }
+            
+            document.getElementById("visualizationSettingsBubbleSize").addEventListener("change", function (e) {
+                  visualizationSettings.bubbleSize = e.target.value;
+                  updateMarkers();
+               });
+            document.getElementById("visualizationSettingsBubbleColor").addEventListener("change", function (e) {
+                  visualizationSettings.bubbleColor = e.target.value;
+                  updateMarkers();
+               });
+            document.getElementById("visualizationSettingsHeatmapColor").addEventListener("change", function (e) {
+                  visualizationSettings.heatmapColor = e.target.value;
+                  updateMarkers();
+               });
+            
             var tooltip = d3.select("body").append("div")
                .attr("class", "tooltip")
                .style("opacity", 0);
@@ -259,11 +292,11 @@
                         tripsData = newTripsData;
                         computeTotalTraffic();
                         if (selectedStation.stationId == null) {
-                           updateMarkersTotalTraffic();
+                           updateMarkers();
                         }
                         else {
                            computeStationOnlyTraffic(selectedStation.stationId);
-                           updateMarkersStationTraffic();
+                           updateMarkers();
                            setTimeout(() => { setMarkerAppearanceSelected(selectedStation.bubble) }, 1500);
                         }
                      });
@@ -297,7 +330,7 @@
                      map.on("moveend", onMapUpdate);
                   }
                   computeTotalTraffic();
-                  updateMarkersTotalTraffic();
+                  updateMarkers();
                });
             });
             
@@ -366,44 +399,115 @@
                
             }
             
-            function updateMarkersTotalTraffic() {
-                maxTraffic = Math.max(...stationData.map(o => (o.arrivals + o.departures) ), 0);
-                radiusDomain = Math.max(maxTraffic, 500);
-              stationData.forEach(function(d) {
-                 var scaleRadius = d3.scaleSqrt()
-                    .domain([0, 1, radiusDomain])
-                    .range([0, 3, 20]);
-                  newRadius = scaleRadius(d.arrivals + d.departures) ;
-                  scaleColor = d3.scaleLinear()
-                    .domain([0, 0.35, 0.65, 1])
-                    .range(['darkorange', 'orange', 'blue', 'darkblue']);
-                    //.range(['darkgreen', 'green', 'blue', 'darkblue']);
-                  newColor = scaleColor(d.arrivals*1.0 /(d.arrivals + d.departures));
-                  d3.select("#station-"+d['station id']).transition().duration(1000).attr("r", newRadius).style("fill", newColor)
-                  .attr("stroke", newColor).end();
-                  d3.select("#cell-"+d['station id']).transition().duration(1000).style("fill", newColor);
-              })
+            function updateMarkers() {
+               if (selectedStation.stationId == null) {
+                  let maxTraffic = Math.max(...stationData.map(o => (o.arrivals + o.departures) ), 0);
+                  stationData.forEach(function(d) {
+                     let animateBubble = d3.select("#station-"+d['station id']).transition().duration(ANIMATION_DURATION);
+                     let animateCell = d3.select("#cell-"+d['station id']).transition().duration(ANIMATION_DURATION);
+                     
+                     if (visualizationSettings.bubbleSize == dataOptions.OFF) {
+                        animateBubble.attr("r", 0);
+                     }
+                     else if (visualizationSettings.bubbleSize == dataOptions.UNIFORM) {
+                        if ((d.arrivals + d.departures) > 0) {
+                           animateBubble.attr("r", BUBBLE_SIZE_DEFAULT);
+                        }
+                        else {
+                           animateBubble.attr("r", 0);
+                        }
+                     }
+                     else if (visualizationSettings.bubbleSize == dataOptions.TRAFFIC_VOLUME) {
+                        let newRadius = scaleRadiusTrafficVolume(d.arrivals + d.departures, maxTraffic)
+                        animateBubble.attr("r", newRadius);
+                     }
+                     
+                     if (visualizationSettings.bubbleColor == dataOptions.OFF) {
+                        animateBubble.style("fill", BUBBLE_COLOR_DEFAULT).attr("stroke", BUBBLE_COLOR_DEFAULT);
+                     }
+                     else if (visualizationSettings.bubbleColor == dataOptions.TRAFFIC_ARR_DEP) {
+                        let newColor = scaleColorTrafficArriveDepart(d.arrivals, d.departures);
+                        animateBubble.style("fill", newColor).attr("stroke", newColor);
+                     }
+                     
+                     if (visualizationSettings.heatmapColor == dataOptions.OFF) {
+                        console.log("heatmap off");
+                        animateCell.style("fill", HEATMAP_COLOR_DEFAULT);
+                     }
+                     else if (visualizationSettings.heatmapColor == dataOptions.TRAFFIC_ARR_DEP) {
+                        let newColor = scaleColorTrafficArriveDepart(d.arrivals, d.departures);
+                        animateCell.style("fill", newColor);
+                     }
+                  })
+               }
+               else {
+                  let maxTraffic = Math.max(...stationData.map(o => (o.specificArrivals + o.specificDepartures) ), 0);
+                  stationData.forEach(function(d) {
+                     let animateBubble = d3.select("#station-"+d['station id']).transition().duration(ANIMATION_DURATION);
+                     let animateCell = d3.select("#cell-"+d['station id']).transition().duration(ANIMATION_DURATION);
+                     
+                     if (visualizationSettings.bubbleSize == dataOptions.OFF) {
+                        animateBubble.attr("r", 0);
+                     }
+                     else if (visualizationSettings.bubbleSize == dataOptions.UNIFORM) {
+                        if ((d.specificArrivals + d.specificDepartures) > 0) {
+                           animateBubble.attr("r", BUBBLE_SIZE_DEFAULT);
+                        }
+                        else {
+                           animateBubble.attr("r", 0);
+                        }
+                     }
+                     else if (visualizationSettings.bubbleSize == dataOptions.TRAFFIC_VOLUME) {
+                        let newRadius = scaleRadiusStationTrafficVolume(d.specificArrivals + d.specificDepartures, maxTraffic)
+                        animateBubble.attr("r", newRadius);
+                     }
+                     
+                     if (visualizationSettings.bubbleColor == dataOptions.OFF) {
+                        animateBubble.style("fill", BUBBLE_COLOR_DEFAULT).attr("stroke", BUBBLE_COLOR_DEFAULT);
+                     }
+                     if (visualizationSettings.bubbleColor == dataOptions.TRAFFIC_ARR_DEP) {
+                        
+                        let newColor = scaleColorTrafficArriveDepart(d.specificArrivals, d.specificDepartures);
+                        animateBubble.style("fill", newColor).attr("stroke", newColor);
+                     }
+                     
+                     if (visualizationSettings.heatmapColor == dataOptions.OFF) {
+                        animateCell.style("fill", HEATMAP_COLOR_DEFAULT);
+                     }
+                     else if (visualizationSettings.heatmapColor == dataOptions.TRAFFIC_ARR_DEP) {
+                        let newColor = scaleColorTrafficArriveDepart(d.specificArrivals, d.specificDepartures);
+                        animateCell.style("fill", newColor);
+                     }
+                  })
+                  setTimeout(() => { setMarkerAppearanceSelected(selectedStation.bubble) }, 1100);
+               }
+               
             }
             
-            function updateMarkersStationTraffic() {
-                maxTraffic = Math.max(...stationData.map(o => (o.specificArrivals + o.specificDepartures) ), 0);
-              stationData.forEach(function(d) {
-                  let newRadius = 0, newColor = "hsla(0, 0%, 0%, 0.0)";
-                  if (d.specificArrivals > 0 || d.specificDepartures > 0) {
-                     var scaleRadius = d3.scaleSqrt()
-                       .domain([0, maxTraffic/15])
-                       .range([0, 15]);
-                     newRadius = Math.min(scaleRadius(d.specificArrivals + d.specificDepartures), 20);
-                     scaleColor = d3.scaleLinear()
-                       .domain([0, 0.35, 0.65, 1])
-                       .range(['darkorange', 'orange', 'blue', 'darkblue']);
-                     newColor = scaleColor(d.specificArrivals*1.0 /(d.specificArrivals + d.specificDepartures));
-                  }
-                  d3.select("#station-"+d['station id']).transition().duration(1000).attr("r", newRadius).style("fill", newColor)
-                  .attr("stroke", newColor).end();
-                  d3.select("#cell-"+d['station id']).transition().duration(1000).style("fill", newColor);
-                 
-              })
+            function scaleRadiusTrafficVolume (traffic, maxTraffic = 500) {
+               let radiusDomain = Math.max(maxTraffic, 500);
+               scaleRadius = d3.scaleSqrt()
+                  .domain([0, 1, radiusDomain])
+                  .range([0, 3, 20]);
+               return scaleRadius(traffic) ;
+            }
+            
+            function scaleRadiusStationTrafficVolume (traffic, maxTraffic = 100) {
+               let newRadius = 0
+               scaleRadius = d3.scaleSqrt()
+                 .domain([0, 1, maxTraffic/5])
+                 .range([0, 3, 15]);
+               newRadius = Math.min(scaleRadius(traffic), 20);
+               return newRadius;
+            }
+            
+            function scaleColorTrafficArriveDepart (arrivals, departures) {
+               let newColor = "hsla(0, 0%, 0%, 0.0)";
+               scaleColor = d3.scaleLinear()
+                  .domain([0, 0.35, 0.65, 1])
+                  .range(['darkorange', 'orange', 'blue', 'darkblue']);
+               newColor = scaleColor(arrivals*1.0 /(arrivals + departures));
+               return newColor;
             }
             
         </script>

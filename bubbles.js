@@ -114,13 +114,12 @@ function setUpBubbles() {
             selectedStation.select(d['station id']);
             hideTooltip();
             computeStationOnlyTraffic(d['station id']);
-            updateMarkersStationTraffic();
-            setTimeout(() => { setMarkerAppearanceSelected(d3.select(this)) }, 1000);
+            updateMarkers();
         }else{
            d3.select(this).classed("selected", false);
            selectedStation.clear();
            setMarkerAppearanceUnselected(d3.select(this));
-           updateMarkersTotalTraffic();
+           updateMarkers();
         }
     })
     
