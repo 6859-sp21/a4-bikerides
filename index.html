@@ -26,6 +26,11 @@
          height: 800px;
          width: 100%;
       }
+      
+      #station-infobox {
+         font-size:0.9em;
+         width: 100%;
+      }
 
       div {
          display: inline-block;
@@ -62,7 +67,7 @@
       font-size:1em;
       fill-opacity: 0.9;
       position: absolute;
-      width: 33%;
+      width: 25%;
       top: 10px;
       left: 0;
       padding: 10px;
@@ -142,10 +147,11 @@
             station. Circles are rescaled and recolored to show the volume of riders for each station that are <b
                style="color:blue">arriving</b> at or <b style="color:darkorange">leaving</b> the selected station.
          </p></div>
+         <p style="font-size:0.8em">Data source: <a href="https://www.bluebikes.com/system-data">Bluebikes</a> by Motivate</p>
       </div>
       <div class="map-overlay-left-inner" id="station-infobox" style="display:none">
-         <label id="stationInfoboxTitle"></label>
-         <label id="stationInfoboxContent"></label>
+         <h6 id="stationInfoboxTitle"></h6>
+         <div id="stationInfoboxContent"></div>
       </div>
    </div>
 
@@ -159,6 +165,8 @@
       </div>
       </div>
       <div class="map-overlay-right-inner" >
+         <button onclick="resetViews()" style="float:right">Reset views</button>
+         <h6>Visualization options</h6>
          <div display=block>
          <label for="visualizationSettingsBubbleSize">Bubble size:</label>
          <select id="visualizationSettingsBubbleSize">
@@ -178,7 +186,6 @@
         <option value="trafficVolume" selected="selected">Traffic volume</option>
         <option value="trafficArriveDepart" selected="selected">Traffic flow</option>
     </select></div>
-      <div display=block><button onclick="resetViews()">Reset views</button></div>
       </div>
    </div>
 
@@ -195,7 +202,7 @@
             var selectedStation = {
                select(stationId) {
                   this.stationId = stationId,
-                  this.data = stationData.find(d => d.stationId == stationId),
+                  this.data = stationData.find(d => d['station id'] == stationId),
                   this.bubble = d3.select("#station-"+stationId),
                   this.cell = d3.select("#cell-"+stationId)
                },
@@ -254,6 +261,7 @@
                   setMarkerAppearanceUnselected(selectedStation.bubble);
                }
                selectedStation.clear();
+               hideInfobox();
                updateMarkers();
             }
             
@@ -319,12 +327,12 @@
                         let filterDate = updateSlider(value);
                         newTripsData = filterTrips(filterDate, FILTER_TIME_WINDOW_HOURS, FILTER_TIME_WINDOW_MINUTES);
                         tripsData = newTripsData;
-                        computeTotalTraffic();
+                        computeAllStationStats();
                         if (selectedStation.stationId == null) {
                            updateMarkers();
                         }
                         else {
-                           computeStationOnlyTraffic(selectedStation.stationId);
+                           computeStationSpecificStats(selectedStation.stationId);
                            updateMarkers();
                            setTimeout(() => { setMarkerAppearanceSelected(selectedStation.bubble) }, 1500);
                         }
@@ -358,7 +366,7 @@
                      map.on("move", onMapUpdate);
                      map.on("moveend", onMapUpdate);
                   }
-                  computeTotalTraffic();
+                  computeAllStationStats();
                   updateMarkers();
                });
             });
@@ -380,24 +388,103 @@
                })
             }
             
-            function computeTotalTraffic() {
-               var arrivals = {};
-               var departures = {};
+            function showInfobox() {
+               collapsible = document.getElementById("overlay-collapsible-content");
+               collapsible.style.display = "none";
+               infobox = document.getElementById("station-infobox");
+               infobox.style.display = "block";
+               title = document.getElementById("stationInfoboxTitle");
+               title.innerHTML = selectedStation.data['station name'];
+               content = document.getElementById("stationInfoboxContent");
+               let trafficVolume = +selectedStation.data.arrivals +
+                  selectedStation.data.departures;
+               content.innerHTML = "";
+               content.innerHTML += "<p>" + trafficVolume + " riders " + "("
+                  + selectedStation.data.arrivals + " arriving, " +
+                  selectedStation.data.departures + " leaving) </p>";
+               content.innerHTML += "<p>" + selectedStation.data.males + " male riders " + "(" +
+                  ((selectedStation.data.males / trafficVolume)*100).toFixed(2)  + "%)<br/> " +
+                  selectedStation.data.females + " female riders ("
+                  + ((selectedStation.data.females/trafficVolume)*100).toFixed(2) + "%)<br/>"
+                  + (trafficVolume - selectedStation.data.males - selectedStation.data.females)
+                  + " gender not reported (" + ((trafficVolume - selectedStation.data.males - selectedStation.data.females)/trafficVolume*100).toFixed(2) + "%)</p>";
+               content.innerHTML += "<p>" + selectedStation.data.subscribers + " subscribers"
+                  + " (" + (selectedStation.data.subscribers/trafficVolume*100).toFixed(2)
+                  + "%)<br/>" + (trafficVolume - selectedStation.data.subscribers) + " casual users"
+                  + " (" + ((trafficVolume - selectedStation.data.subscribers)/trafficVolume*100).toFixed(2)
+                  + "%)</p>";
+            }
+            
+            function hideInfobox() {
+               infobox = document.getElementById("station-infobox");
+               infobox.style.display = "none";
+            }
+            
+            function computeAllStationStats() {
+               let arrivals = {}, departures = {}, tripDuration = {},
+                  males = {}, females = {}, age = {}, subscribers = {};
                document.getElementById('slider-trip-count').textContent =
                         tripsData.length + " trips in this time window.";
                for(var i = 0; i < tripsData.length; ++i){
-                   if (arrivals[tripsData[i]['end station id']] >= 0)
+                   if (!isNaN(arrivals[tripsData[i]['end station id']]))
                      arrivals[tripsData[i]['end station id']]++;
                   else
                      arrivals[tripsData[i]['end station id']] = 1
-                  if (departures[tripsData[i]['start station id']] >= 0)
+                  if (!isNaN(departures[tripsData[i]['start station id']]))
                      departures[tripsData[i]['start station id']]++;
                   else
                      departures[tripsData[i]['start station id']] = 1
+                     
+                  if (tripsData[i]['gender'] == '1') {
+                     if (!isNaN(males[tripsData[i]['start station id']]) ) {
+                        males[tripsData[i]['start station id']]++;
+                     }
+                     else {
+                        males[tripsData[i]['start station id']] = 1;
+                     }
+                     if (!isNaN(males[tripsData[i]['end station id']])) {
+                        males[tripsData[i]['end station id']]++;
+                     }
+                     else {
+                        males[tripsData[i]['end station id']] = 1;
+                     }
+                  }
+                  else if (tripsData[i]['gender'] == '2') {
+                     if (!isNaN(females[tripsData[i]['start station id']]) ) {
+                        females[tripsData[i]['start station id']]++;
+                     }
+                     else {
+                        females[tripsData[i]['start station id']] = 1;
+                     }
+                     if (!isNaN(males[tripsData[i]['end station id']])) {
+                        females[tripsData[i]['end station id']]++;
+                     }
+                     else {
+                        females[tripsData[i]['end station id']] = 1;
+                     }
+                  }
+                  
+                  if (tripsData[i]['usertype'] == "Subscriber") {
+                     if (subscribers[tripsData[i]['start station id']] >= 0) {
+                        subscribers[tripsData[i]['start station id']]++;
+                     }
+                     else {
+                        subscribers[tripsData[i]['start station id']] = 1;
+                     }
+                     if (subscribers[tripsData[i]['end station id']] >= 0) {
+                        subscribers[tripsData[i]['end station id']]++;
+                     }
+                     else {
+                        subscribers[tripsData[i]['end station id']] = 1;
+                     }
+                  }
                }
                stationData.forEach(function(d) {
                   d.arrivals = arrivals[ d['station id'] ] || 0;
                   d.departures = departures[ d['station id'] ] || 0;
+                  d.males = males[d['station id']] || 0;
+                  d.females = females[d['station id']] || 0;
+                  d.subscribers = subscribers[d['station id']] || 0;
                // Too slow and inefficient:
                 //d.arrivals = tripsData.filter(trip => (trip['end station id'] == d['station id'])).length;
                 //d.departures = tripsData.filter(trip => (trip['start station id'] == d['station id'])).length;
@@ -406,9 +493,9 @@
                
             }
             
-            function computeStationOnlyTraffic(stationId) {
-               var arrivals = {};
-               var departures = {};
+            function computeStationSpecificStats(stationId) {
+               let arrivals = {};
+               let departures = {};
                stationSpecificTripsData = tripsData.filter(trip =>
                   (trip['end station id'] == stationId || trip['start station id'] == stationId));
                for(var i = 0; i < stationSpecificTripsData.length; ++i){
@@ -469,7 +556,7 @@
                      }
                      else if (visualizationSettings.heatmapColor == dataOptions.TRAFFIC_VOLUME) {
                         let newColor = scaleColorTrafficVolume(d.arrivals + d.departures);
-                        animateCell.style("fill", newColor).attr("fill-opacity", 0.4);
+                        animateCell.style("fill", newColor).attr("fill-opacity", 0.3);
                      }
                      else if (visualizationSettings.heatmapColor == dataOptions.TRAFFIC_ARR_DEP) {
                         let newColor = scaleColorTrafficArriveDepart(d.arrivals, d.departures);
@@ -516,13 +603,14 @@
                      }
                      else if (visualizationSettings.heatmapColor == dataOptions.TRAFFIC_VOLUME) {
                         let newColor = scaleColorTrafficVolume(d.specificArrivals + d.specificDepartures, maxTraffic);
-                        animateCell.style("fill", newColor).attr("fill-opacity", 0.4);
+                        animateCell.style("fill", newColor).attr("fill-opacity", 0.3);
                      }
                      else if (visualizationSettings.heatmapColor == dataOptions.TRAFFIC_ARR_DEP) {
                         let newColor = scaleColorTrafficArriveDepart(d.specificArrivals, d.specificDepartures);
                         animateCell.style("fill", newColor).attr("fill-opacity", 0.1);
                      }
                   })
+                  showInfobox();
                   setTimeout(() => { setMarkerAppearanceSelected(selectedStation.bubble) }, ANIMATION_DURATION+100);
                }
                
