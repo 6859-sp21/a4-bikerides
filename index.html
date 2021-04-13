@@ -23,14 +23,17 @@
    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.53.1/mapbox-gl.css' rel='stylesheet' />
 
    <style>
+      #infoBoxIncomingHisto {
+         margin: auto;
+      }
+   
       #map-container {
          height: 800px;
          width: 100%;
       }
 
       #station-infobox {
-         font-size: 0.9em;
-         width: 100%;
+         min-width:300px;
       }
 
       div {
@@ -65,10 +68,11 @@
    </style>
    <style>
       .map-overlay-left {
-         font-size: 1em;
+         font-size: 0.9em;
          fill-opacity: 0.9;
          position: absolute;
-         width: 25%;
+         min-width:300px;
+         width: 20%;
          top: 10px;
          left: 0;
          padding: 10px;
@@ -160,15 +164,6 @@
                operated by Motivate.
                The team was interested in shared bikeflows, and the December 2019 data published by Bluebikes are used
                to visualize this map. </p>
-            <p><b>Circle sizes</b> indicate the overall volume of traffic at each bike station.</p>
-
-            <p><b>Colors</b> indicate the relative proportions of people <b style="color:blue">arriving</b> and <b
-                  style="color:darkorange">leaving</b> each station.</p>
-
-            <p><b>Click on a station</b> to view traffic at all stations originating or terminating at the selected
-               station. Circles are rescaled and recolored to show the volume of riders for each station that are <b
-                  style="color:blue">arriving</b> at or <b style="color:darkorange">leaving</b> the selected station.
-            </p>
          </div>
          <p style="font-size:0.8em">Data source: <a href="https://www.bluebikes.com/system-data">Bluebikes</a> by
             Motivate</p>
@@ -214,8 +209,12 @@
                <option value="trafficArriveDepart" selected="selected">Traffic flow</option>
             </select>
          </div>
+         <svg id="legend" height=50 width=150></svg>
+         <svg id="legendColorTrafficVolume" height=50 width=150></svg>
+         <svg id="legendColorTrafficFlow" height=50 width=150></svg>
       </div>
-      <svg id="legend" height=100 width=200></svg>
+      
+      
    </div>
 
    <script>
@@ -261,6 +260,9 @@
          bubbleColor: dataOptions.TRAFFIC_ARR_DEP,
          heatmapColor: dataOptions.TRAFFIC_ARR_DEP
       }
+      
+      colorLegendTrafficFlow();
+      
 
       function toggleCollapsibleOverlay(collapse = false) {
          content = document.getElementById("overlay-collapsible-content");
@@ -330,7 +332,12 @@
       svg.insert("g", ":first-child")
          .attr("id", "heatmap")
       //.attr("fill", "none")
+      
+        // Color legend.
+        
 
+        
+        
       // Parse the data and update markers
       d3.csv('https://raw.githubusercontent.com/6859-sp21/a4-bikerides/main/bluebikes_2020_stations.csv').then(function (csv) {
          stationData = csv;
@@ -653,7 +660,7 @@
             + "<br/>Mean length of <b style='color:darkorange'>rides leaving</b>: " + Math.round(selectedStation.data.avgOutgoingTripDuration / 60) + " min."
             + "</br><small>(excluding trips longer than " + Math.round(TRIP_DURATION_DISCARD / 60 / 60) + " hrs.)</small></p>";
 
-         content.innerHTML += "<div id='infoBoxIncomingHisto'></div>";
+         content.innerHTML += "<div id='infoBoxIncomingHisto' ></div>";
          content.innerHTML += "<div id='infoBoxOutgoingHisto'></div>";
 
          setupInfoboxTripLengthHistogram(
@@ -817,6 +824,8 @@
          if (selectedStation.stationId == null) {
             let maxTraffic = Math.max(...stationData.map(o => (o.arrivals + o.departures)), 0);
             let maxAvgDuration = Math.max(...stationData.map(o => (o.avgTripDuration)), 0);
+            
+            colorLegendTrafficVolume(maxTraffic);
 
             // Update legend
             if (visualizationSettings.bubbleSize == dataOptions.OFF) {
@@ -836,6 +845,20 @@
 
                setupLegend(maxTraffic, 3, legendScalingFn)
 
+            }
+            
+            if (visualizationSettings.bubbleColor != dataOptions.TRAFFIC_VOLUME && visualizationSettings.heatmapColor != dataOptions.TRAFFIC_VOLUME) {
+               d3.select("#legendColorTrafficVolume").transition().duration(ANIMATION_DURATION).style("display", "none")
+            }
+            else {
+               d3.select("#legendColorTrafficVolume").transition().duration(ANIMATION_DURATION).style("display", "block")
+            }
+            
+            if (visualizationSettings.bubbleColor != dataOptions.TRAFFIC_ARR_DEP && visualizationSettings.heatmapColor != dataOptions.TRAFFIC_ARR_DEP) {
+               d3.select("#legendColorTrafficFlow").transition().duration(ANIMATION_DURATION).style("display", "none")
+            }
+            else {
+               d3.select("#legendColorTrafficFlow").transition().duration(ANIMATION_DURATION).style("display", "block")
             }
 
 
@@ -892,6 +915,8 @@
          // If there is currently a station selected
          else {
             let maxTraffic = Math.max(...stationData.map(o => (o.specificArrivals + o.specificDepartures)), 0);
+            
+            colorLegendTrafficVolume(maxTraffic);
 
 
             console.log("selected station: ", selectedStation)
@@ -914,6 +939,21 @@
                let legendScalingFn = function (trafficValue) {
                   return scaleRadiusStationTrafficVolume(trafficValue, maxTraffic)
                }
+               
+            if (visualizationSettings.bubbleColor != dataOptions.TRAFFIC_VOLUME && visualizationSettings.heatmapColor != dataOptions.TRAFFIC_VOLUME) {
+               d3.select("#legendColorTrafficVolume").transition().duration(ANIMATION_DURATION).style("display", "none")
+            }
+            else {
+               d3.select("#legendColorTrafficVolume").transition().duration(ANIMATION_DURATION).style("display", "block")
+            }
+            
+            if (visualizationSettings.bubbleColor != dataOptions.TRAFFIC_ARR_DEP && visualizationSettings.heatmapColor != dataOptions.TRAFFIC_ARR_DEP) {
+               d3.select("#legendColorTrafficFlow").transition().duration(ANIMATION_DURATION).style("display", "none")
+            }
+            else {
+               d3.select("#legendColorTrafficFlow").transition().duration(ANIMATION_DURATION).style("display", "block")
+            }
+
 
                console.log("setup legend: max traffic", maxTraffic)
                console.log("setup legend: max traffic minus selected", maxTrafficMinusSelected)
@@ -1012,6 +1052,69 @@
          }
          return newColor;
       }
+      
+      function colorLegendTrafficVolume(maxTraffic) {
+         d3.select("#legendColorTrafficVolume").selectAll("*").remove();
+         let width = 150;
+         let barHeight = 8;
+         let height = 30;
+         let xTicks = [0, maxTraffic/2, maxTraffic];
+         let padding = 0;
+         
+         let xScale = d3.scaleLinear()
+              .range([0, width])
+              .domain([0, maxTraffic]);
+           
+           var xAxis = d3.axisBottom(xScale)
+              .tickSize(barHeight * 2)
+              .tickValues(xTicks);
+         
+         let svg = d3.select("#legendColorTrafficVolume").attr("width", 150).attr("height", 30);
+         let g = svg.append("g").attr("transform", "translate(" + padding + ", 0)");;
+         let defs = svg.append("defs");
+         let linearGradient = defs.append("linearGradient").attr("id", "TrafficVolumeGradient");
+         linearGradient.append("stop").attr("offset", "0%").attr("stop-color", 'lightblue')
+         linearGradient.append("stop").attr("offset", "100%").attr("stop-color", 'darkblue');
+         //svg.append("text").attr("text-anchor", "middle").attr("x", 75).attr("y", 10)
+         //   .text("Traffic volume").style("font-size", "0.8em").style("font-weight", "bold");
+         g.append("rect").attr("width", 150).attr("height", 8).attr("x", 0).attr("y", 10)
+           .style("fill", "url(#TrafficVolumeGradient)").attr("fill-opacity", 0.5);
+         g.append("g").call(xAxis).select(".domain").remove();
+      }
+      
+      function colorLegendTrafficFlow() {
+         
+         //  var xScale = d3.scaleLinear()
+         //     .range([0, innerWidth])
+         //     .domain([-100, 100]);
+           
+         //     var xScale = d3.scaleLinear()
+         //     .range([0, innerWidth])
+         //     .domain([0, 100]);
+         
+         //  var xAxis = d3.axisBottom(xScale)
+         //     .tickSize(barHeight * 2)
+         //     .tickValues(xTicks);
+         
+         let svg = d3.select("#legendColorTrafficFlow").attr("width", 150).attr("height", 45);
+         let g = svg.append("g");
+         let defs = svg.append("defs");
+         let linearGradient = defs.append("linearGradient").attr("id", "TrafficFlowGradient");
+         linearGradient.append("stop").attr("offset", "0%").attr("stop-color", 'darkorange')
+         linearGradient.append("stop").attr("offset", "35%").attr("stop-color", 'orange');
+         linearGradient.append("stop").attr("offset", "65%").attr("stop-color", 'blue');
+         linearGradient.append("stop").attr("offset", "100%").attr("stop-color", 'darkblue');
+         svg.append("text").attr("text-anchor", "end").attr("x", 150).attr("y", 40)
+            .text("Arriving").style("font-size", "0.8em");
+         svg.append("text").attr("text-anchor", "start").attr("x", 0).attr("y", 40)
+            .text("Leaving").style("font-size", "0.8em");
+         //svg.append("text").attr("text-anchor", "middle").attr("x", 75).attr("y", 10)
+         //   .text("Traffic flow").style("font-size", "0.8em").style("font-weight", "bold");
+         g.append("rect").attr("width", 150).attr("height", 8).attr("x", 0).attr("y", 20)
+           .style("fill", "url(#TrafficFlowGradient)").attr("fill-opacity", 0.5);
+         //g.append("g").call(xAxis).select(".domain").remove();
+      }
+      
 
    </script>
 

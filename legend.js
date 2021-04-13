@@ -6,7 +6,7 @@ function setupLegend(maxValue, nTicks, radiusFn) {
     var legend = d3.select("#legend")
 
     // top center
-    let baseX = 100
+    let baseX = 50
     let baseY = 0
 
     let ticks = []
