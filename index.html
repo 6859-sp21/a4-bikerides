@@ -3,7 +3,7 @@
 
 <head>
    <meta charset="utf-8">
-   <title>Pulse of the City | Blue Bikes </title>
+   <title>Pulse of the City | Bluebikes </title>
    <script src="https://d3js.org/d3.v6.js"></script>
 
    <script src="https://d3js.org/d3-voronoi.v1.min.js"></script>
@@ -23,6 +23,10 @@
    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.53.1/mapbox-gl.css' rel='stylesheet' />
 
    <style>
+      #visOptions {
+         padding-bottom: 10px;
+      }
+   
       #infoBoxIncomingHisto {
          margin: auto;
       }
@@ -100,7 +104,8 @@
          font-size: 0.9em;
          fill-opacity: 0.9;
          position: absolute;
-         width: 20%;
+         min-width:250px;
+         width: 15%;
          top: 10px;
          right: 0;
          padding: 10px;
@@ -156,7 +161,7 @@
       <div class="map-overlay-left-inner">
          <button type="button" class="map-overlay-left-inner" id="overlay-collapsible"
             onclick="toggleCollapsibleOverlay()" style="float:right">+/-</button>
-         <h3>Pulse of the City | Blue Bikes </h3>
+         <h3>Pulse of the City | Bluebikes </h3>
          <div id="overlay-collapsible-content" style="display:block">
             <p> Bluebikes is Metro Boston's public bike share program, with more than 1,800 bikes at over 200 stations
                across Boston, Brookline, Cambridge, Somerville and Everett.
@@ -176,38 +181,38 @@
 
    <div class="map-overlay-right">
       <div class="map-overlay-right-inner">
-         <h4><label id="slider-time-val"></label></h4>
+         <h3><label id="slider-time-val"></label></h3>
          <input id="slider" type="range" min="0" max="1440" value="720">
          <label id="slider-trip-count"></label>
          <div id="vis">
             <button id="play-button">Play</button>
          </div>
       </div>
-      <div class="map-overlay-right-inner">
-         <button onclick="resetViews()" style="float:right">Reset views</button>
-         <h6>Visualization options</h6>
+      <div class="map-overlay-right-inner" id="visOptions">
+         <div><h6>Visualization options</h6>
+         <button onclick="resetViews()" style="display:block">Reset views</button><br/></div>
          <div display=block>
-            <label for="visualizationSettingsBubbleSize">Bubble size:</label>
+            <label for="visualizationSettingsBubbleSize">Bubble size:
             <select id="visualizationSettingsBubbleSize">
                <option value="uniform">Uniform</option>
                <option value="trafficVolume" selected="selected">Traffic volume</option>
                <!-- <option value="tripLength">Average trip length</option> -->
                <option value="off">Off</option>
-            </select>
+            </select></label>
          </div>
-         <div display=block><label for="visualizationSettingsBubbleColor">Bubble color:</label>
+         <div display=block><label for="visualizationSettingsBubbleColor">Bubble color:
             <select id="visualizationSettingsBubbleColor">
                <option value="off">Neutral</option>
                <option value="trafficVolume" selected="selected">Traffic volume</option>
                <option value="trafficArriveDepart" selected="selected">Traffic flow</option>
-            </select>
+            </select></label>
          </div>
-         <div display=block><label for="visualizationSettingsHeatmapColor">Heatmap:</label>
+         <div display=block><label for="visualizationSettingsHeatmapColor">Heatmap:
             <select id="visualizationSettingsHeatmapColor">
                <option value="off">Off</option>
                <option value="trafficVolume" selected="selected">Traffic volume</option>
                <option value="trafficArriveDepart" selected="selected">Traffic flow</option>
-            </select>
+            </select></label><br/>
          </div>
          <svg id="legend" height=50 width=150></svg>
          <svg id="legendColorTrafficVolume" height=50 width=150></svg>
@@ -1078,10 +1083,11 @@
          let barHeight = 8;
          let height = 30;
          let xTicks = [0, maxTraffic/2, maxTraffic];
-         let padding = 0;
+         let padding = 9;
+         var innerWidth = width - (padding * 2);
          
          let xScale = d3.scaleLinear()
-              .range([0, width])
+              .range([0, innerWidth])
               .domain([0, maxTraffic]);
            
            var xAxis = d3.axisBottom(xScale)
@@ -1096,24 +1102,19 @@
          linearGradient.append("stop").attr("offset", "100%").attr("stop-color", 'darkblue');
          //svg.append("text").attr("text-anchor", "middle").attr("x", 75).attr("y", 10)
          //   .text("Traffic volume").style("font-size", "0.8em").style("font-weight", "bold");
-         g.append("rect").attr("width", 150).attr("height", 8).attr("x", 0).attr("y", 10)
+         g.append("rect").attr("width", innerWidth).attr("height", 8).attr("x", 0).attr("y", 10)
            .style("fill", "url(#TrafficVolumeGradient)").attr("fill-opacity", 0.5);
          g.append("g").call(xAxis).select(".domain").remove();
       }
       
       function colorLegendTrafficFlow() {
          
-         //  var xScale = d3.scaleLinear()
-         //     .range([0, innerWidth])
-         //     .domain([-100, 100]);
-           
-         //     var xScale = d3.scaleLinear()
-         //     .range([0, innerWidth])
-         //     .domain([0, 100]);
-         
-         //  var xAxis = d3.axisBottom(xScale)
-         //     .tickSize(barHeight * 2)
-         //     .tickValues(xTicks);
+         d3.select("#legendColorTrafficFlow").selectAll("*").remove();
+         let width = 150;
+         let barHeight = 8;
+         let height = 30;
+         let padding = 9;
+         var innerWidth = width - (padding * 2);
          
          let svg = d3.select("#legendColorTrafficFlow").attr("width", 150).attr("height", 45);
          let g = svg.append("g");
@@ -1129,7 +1130,7 @@
             .text("Leaving").style("font-size", "0.8em");
          //svg.append("text").attr("text-anchor", "middle").attr("x", 75).attr("y", 10)
          //   .text("Traffic flow").style("font-size", "0.8em").style("font-weight", "bold");
-         g.append("rect").attr("width", 150).attr("height", 8).attr("x", 0).attr("y", 20)
+         g.append("rect").attr("width", width).attr("height", 8).attr("x", 0).attr("y", 20)
            .style("fill", "url(#TrafficFlowGradient)").attr("fill-opacity", 0.5);
          //g.append("g").call(xAxis).select(".domain").remove();
       }
