@@ -114,12 +114,12 @@ function setUpBubbles() {
             selectedStation.select(d['station id']);
             hideTooltip();
             computeStationSpecificStats(d['station id']);
-            updateMarkers();
+            updateMarkersAndLegend();
         }else{
            d3.select(this).classed("selected", false);
            selectedStation.clear();
            setMarkerAppearanceUnselected(d3.select(this));
-           updateMarkers();
+           updateMarkersAndLegend();
            hideInfobox();
         }
     })

@@ -12,6 +12,7 @@
    <script src="bubbles.js"></script>
    <script src="heatmap_slider.js"></script>
    <script src="heatmap.js"></script>
+   <script src="legend.js"></script>
 
    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
       integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
@@ -126,6 +127,22 @@
       #play-button:hover {
          background-color: #696969;
       }
+
+      #legend-div {
+         background-color: rgba(255, 255, 255, 0.514);
+         border-radius: 10px;
+         padding: 10px;
+         margin-bottom: 10px;
+         float: right;
+      }
+   </style>
+
+   <style>
+      .legend-circle {
+         stroke: #ccc;
+         stroke-dasharray: 4, 2;
+         fill: none;
+      }
    </style>
 </head>
 
@@ -198,6 +215,7 @@
             </select>
          </div>
       </div>
+      <svg id="legend" height=100 width=200></svg>
    </div>
 
    <script>
@@ -254,15 +272,15 @@
       }
       document.getElementById("visualizationSettingsBubbleSize").addEventListener("change", function (e) {
          visualizationSettings.bubbleSize = e.target.value;
-         updateMarkers();
+         updateMarkersAndLegend();
       });
       document.getElementById("visualizationSettingsBubbleColor").addEventListener("change", function (e) {
          visualizationSettings.bubbleColor = e.target.value;
-         updateMarkers();
+         updateMarkersAndLegend();
       });
       document.getElementById("visualizationSettingsHeatmapColor").addEventListener("change", function (e) {
          visualizationSettings.heatmapColor = e.target.value;
-         updateMarkers();
+         updateMarkersAndLegend();
       });
       function resetViews() {
          document.getElementById("visualizationSettingsBubbleSize").value = dataOptions.TRAFFIC_VOLUME;
@@ -276,7 +294,7 @@
          }
          selectedStation.clear();
          hideInfobox();
-         updateMarkers();
+         updateMarkersAndLegend();
       }
 
       var tooltip = d3.select("body").append("div")
@@ -343,11 +361,11 @@
                   tripsData = newTripsData;
                   computeAllStationStats();
                   if (selectedStation.stationId == null) {
-                     updateMarkers();
+                     updateMarkersAndLegend();
                   }
                   else {
                      computeStationSpecificStats(selectedStation.stationId);
-                     updateMarkers();
+                     updateMarkersAndLegend();
                      setTimeout(() => { setMarkerAppearanceSelected(selectedStation.bubble) }, 1500);
                   }
                });
@@ -381,7 +399,8 @@
                map.on("moveend", onMapUpdate);
             }
             computeAllStationStats();
-            updateMarkers();
+            updateMarkersAndLegend();
+
          });
       });
 
@@ -428,8 +447,8 @@
             + "%)<br/>" + (trafficVolume - selectedStation.data.subscribers) + " casual users"
             + " (" + ((trafficVolume - selectedStation.data.subscribers) / trafficVolume * 100).toFixed(2)
             + "%)</p>";
-         content.innerHTML += "<p> Average trip duration: " + Math.round(selectedStation.data.avgTripDuration / 60) + " min." 
-            + "</br><small>(excluding trips longer than " + Math.round(TRIP_DURATION_DISCARD / 60 / 60)+ " hrs.)</small></p>";
+         content.innerHTML += "<p> Average trip duration: " + Math.round(selectedStation.data.avgTripDuration / 60) + " min."
+            + "</br><small>(excluding trips longer than " + Math.round(TRIP_DURATION_DISCARD / 60 / 60) + " hrs.)</small></p>";
 
          console.log("Selected station data: ", selectedStation.data)
       }
@@ -562,10 +581,32 @@
 
       }
 
-      function updateMarkers() {
+      function updateMarkersAndLegend() {
          if (selectedStation.stationId == null) {
             let maxTraffic = Math.max(...stationData.map(o => (o.arrivals + o.departures)), 0);
             let maxAvgDuration = Math.max(...stationData.map(o => (o.avgTripDuration)), 0);
+
+            // Update legend
+            if (visualizationSettings.bubbleSize == dataOptions.OFF) {
+               d3.select("#legend").transition().duration(ANIMATION_DURATION).style("opacity", "0")
+
+            }
+            else if (visualizationSettings.bubbleSize == dataOptions.UNIFORM) {
+               d3.select("#legend").transition().duration(ANIMATION_DURATION).style("opacity", "0")
+
+            }
+            else if (visualizationSettings.bubbleSize == dataOptions.TRAFFIC_VOLUME) {
+               d3.select("#legend").transition().duration(ANIMATION_DURATION).style("opacity", "1")
+
+               let legendScalingFn = function (trafficValue) {
+                  return scaleRadiusTrafficVolume(trafficValue, maxTraffic)
+               }
+
+               setupLegend(maxTraffic, 3, legendScalingFn)
+
+            }
+
+
             stationData.forEach(function (d) {
                let animateBubble = d3.select("#station-" + d['station id']).transition().duration(ANIMATION_DURATION);
                let animateCell = d3.select("#cell-" + d['station id']).transition().duration(ANIMATION_DURATION);
@@ -618,6 +659,35 @@
          }
          else {
             let maxTraffic = Math.max(...stationData.map(o => (o.specificArrivals + o.specificDepartures)), 0);
+
+            
+            console.log("selected station: ", selectedStation)
+            let stationsMinusSelected = stationData.filter(d => d["station id"] != selectedStation.stationId)
+            console.log("stationsMinusSelected: ", stationsMinusSelected)
+            let maxTrafficMinusSelected = Math.max(...stationsMinusSelected.map(o => (o.specificArrivals + o.specificDepartures)), 0);
+
+            // Update legend
+            if (visualizationSettings.bubbleSize == dataOptions.OFF) {
+               d3.select("#legend").transition().duration(ANIMATION_DURATION).style("opacity", "0")
+
+            }
+            else if (visualizationSettings.bubbleSize == dataOptions.UNIFORM) {
+               d3.select("#legend").transition().duration(ANIMATION_DURATION).style("opacity", "0")
+
+            }
+            else if (visualizationSettings.bubbleSize == dataOptions.TRAFFIC_VOLUME) {
+               d3.select("#legend").transition().duration(ANIMATION_DURATION).style("opacity", "1")
+
+               let legendScalingFn = function (trafficValue) {
+                  return scaleRadiusStationTrafficVolume(trafficValue, maxTraffic)
+               }
+
+               console.log("setup legend: max traffic", maxTraffic)
+               console.log("setup legend: max traffic minus selected", maxTrafficMinusSelected)
+               setupLegend(maxTrafficMinusSelected, 2, legendScalingFn)
+
+            }
+
             stationData.forEach(function (d) {
                let animateBubble = d3.select("#station-" + d['station id']).transition().duration(ANIMATION_DURATION);
                let animateCell = d3.select("#cell-" + d['station id']).transition().duration(ANIMATION_DURATION);
@@ -683,6 +753,7 @@
          scaleRadius = d3.scaleSqrt()
             .domain([0, 1, maxTraffic / 5])
             .range([0, 3, 15]);
+
          newRadius = Math.min(scaleRadius(traffic), 20);
          return newRadius;
       }
