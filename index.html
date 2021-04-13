@@ -1059,10 +1059,11 @@
          let barHeight = 8;
          let height = 30;
          let xTicks = [0, maxTraffic/2, maxTraffic];
-         let padding = 0;
+         let padding = 9;
+         var innerWidth = width - (padding * 2);
          
          let xScale = d3.scaleLinear()
-              .range([0, width])
+              .range([0, innerWidth])
               .domain([0, maxTraffic]);
            
            var xAxis = d3.axisBottom(xScale)
@@ -1077,24 +1078,19 @@
          linearGradient.append("stop").attr("offset", "100%").attr("stop-color", 'darkblue');
          //svg.append("text").attr("text-anchor", "middle").attr("x", 75).attr("y", 10)
          //   .text("Traffic volume").style("font-size", "0.8em").style("font-weight", "bold");
-         g.append("rect").attr("width", 150).attr("height", 8).attr("x", 0).attr("y", 10)
+         g.append("rect").attr("width", innerWidth).attr("height", 8).attr("x", 0).attr("y", 10)
            .style("fill", "url(#TrafficVolumeGradient)").attr("fill-opacity", 0.5);
          g.append("g").call(xAxis).select(".domain").remove();
       }
       
       function colorLegendTrafficFlow() {
          
-         //  var xScale = d3.scaleLinear()
-         //     .range([0, innerWidth])
-         //     .domain([-100, 100]);
-           
-         //     var xScale = d3.scaleLinear()
-         //     .range([0, innerWidth])
-         //     .domain([0, 100]);
-         
-         //  var xAxis = d3.axisBottom(xScale)
-         //     .tickSize(barHeight * 2)
-         //     .tickValues(xTicks);
+         d3.select("#legendColorTrafficFlow").selectAll("*").remove();
+         let width = 150;
+         let barHeight = 8;
+         let height = 30;
+         let padding = 9;
+         var innerWidth = width - (padding * 2);
          
          let svg = d3.select("#legendColorTrafficFlow").attr("width", 150).attr("height", 45);
          let g = svg.append("g");
@@ -1110,7 +1106,7 @@
             .text("Leaving").style("font-size", "0.8em");
          //svg.append("text").attr("text-anchor", "middle").attr("x", 75).attr("y", 10)
          //   .text("Traffic flow").style("font-size", "0.8em").style("font-weight", "bold");
-         g.append("rect").attr("width", 150).attr("height", 8).attr("x", 0).attr("y", 20)
+         g.append("rect").attr("width", width).attr("height", 8).attr("x", 0).attr("y", 20)
            .style("fill", "url(#TrafficFlowGradient)").attr("fill-opacity", 0.5);
          //g.append("g").call(xAxis).select(".domain").remove();
       }
