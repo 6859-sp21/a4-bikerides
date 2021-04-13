@@ -343,35 +343,11 @@
          d3.csv('https://raw.githubusercontent.com/6859-sp21/a4-bikerides/main/bluebikes_2020.csv').then(function (csv) {
             tripsDataFull = csv;
 
-            function updateSlider(value) {
-               sliderTimeScale = d3.scaleTime()
-                  .domain([0, 1440])
-                  .range([new Date("2019-12-01 00:00"), new Date("2019-12-02 00:00")])
-               let sliderTime = sliderTimeScale(value);
-               document.getElementById('slider-time-val').textContent =
-                  sliderTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-               return sliderTime;
-            }
-            document
-               .getElementById('slider')
-               .addEventListener('input', function (e) {
-                  let value = parseInt(e.target.value);
-                  let filterDate = updateSlider(value);
-                  newTripsData = filterTrips(filterDate, FILTER_TIME_WINDOW_HOURS, FILTER_TIME_WINDOW_MINUTES);
-                  tripsData = newTripsData;
-                  computeAllStationStats();
-                  if (selectedStation.stationId == null) {
-                     updateMarkersAndLegend();
-                  }
-                  else {
-                     computeStationSpecificStats(selectedStation.stationId);
-                     updateMarkersAndLegend();
-                     setTimeout(() => { setMarkerAppearanceSelected(selectedStation.bubble) }, 1500);
-                  }
-               });
-
+            document.getElementById('slider').addEventListener('input', handleSliderChange);
             let filterDate = updateSlider(document.getElementById("slider").value);
-            tripsData = filterTrips(filterDate, FILTER_TIME_WINDOW_HOURS, FILTER_TIME_WINDOW_MINUTES);
+            
+            tripsData = filterTrips(filterDate,
+               FILTER_TIME_WINDOW_HOURS, FILTER_TIME_WINDOW_MINUTES);
 
             // Automate results via Play button
             var playButton = d3.select("#play-button");
@@ -420,6 +396,31 @@
                (tripEndTime >= filterStartTime && tripEndTime <= filterEndTime));
          })
       }
+      
+      function updateSlider(value) {
+         sliderTimeScale = d3.scaleTime()
+            .domain([0, 1440])
+            .range([new Date("2019-12-01 00:00"), new Date("2019-12-02 00:00")])
+         let sliderTime = sliderTimeScale(value);
+         document.getElementById('slider-time-val').textContent =
+            sliderTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+         return sliderTime;
+      }
+      function handleSliderChange(e) {
+         let filterDate = updateSlider(parseInt(e.target.value));
+         newTripsData = filterTrips(filterDate, FILTER_TIME_WINDOW_HOURS, FILTER_TIME_WINDOW_MINUTES);
+         tripsData = newTripsData;
+         computeAllStationStats();
+         if (selectedStation.stationId == null) {
+            updateMarkersAndLegend();
+         }
+         else {
+            computeStationSpecificStats(selectedStation.stationId);
+            updateMarkersAndLegend();
+            setTimeout(() => { setMarkerAppearanceSelected(selectedStation.bubble) },
+               ANIMATION_DURATION+500);
+         }
+      }
 
       function showInfobox() {
          collapsible = document.getElementById("overlay-collapsible-content");
@@ -452,7 +453,6 @@
 
          console.log("Selected station data: ", selectedStation.data)
       }
-
       function hideInfobox() {
          infobox = document.getElementById("station-infobox");
          infobox.style.display = "none";
@@ -582,6 +582,7 @@
       }
 
       function updateMarkersAndLegend() {
+         // If currently no station is selected
          if (selectedStation.stationId == null) {
             let maxTraffic = Math.max(...stationData.map(o => (o.arrivals + o.departures)), 0);
             let maxAvgDuration = Math.max(...stationData.map(o => (o.avgTripDuration)), 0);
@@ -657,6 +658,7 @@
                }
             })
          }
+         // If there is currently a station selected
          else {
             let maxTraffic = Math.max(...stationData.map(o => (o.specificArrivals + o.specificDepartures)), 0);
 

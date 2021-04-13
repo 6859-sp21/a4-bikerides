@@ -1,26 +1,18 @@
 
-         
-function clearMarkerSelections() {
-   //setMarkerAppearanceUnselected(d3.selectAll("circle"));
-   if (selectedStation.stationId !== null) {
-      selectedStation.bubble.classed("selected", false);
-      setMarkerAppearanceUnselected(selectedStation.bubble);
-   }
-   selectedStation.clear();
-}
+
 
 function setMarkerAppearanceSelected(marker) {
    marker
       .attr("stroke","black")
       .attr("stroke-width", 4)
-      .attr("fill-opacity", 0.9);
+      .attr("fill-opacity", 0.8);
 }
 
 function setMarkerAppearanceHover(marker) {
    marker
       .attr("stroke", "black")
       .attr("stroke-width", 4)
-      //.attr("fill-opacity", .8);
+      //.attr("fill-opacity", 0.8);
 }
 
 function setMarkerAppearanceUnselected(marker) {
@@ -70,17 +62,17 @@ function setUpBubbles() {
       .attr("stationId", function(d){ return d['station id']})
       .attr("stationName", function(d){ return d['station name']})
       .attr("id", function(d){ return "station-" + d['station id']})
-      //.on("mouseover", mouseover)
       .on("mouseover", function(d) {
            setMarkerAppearanceHover(d3.select(this));
       })
       .on("mousemove", function(event, d) {
           {
-               d3.select(this).style("cursor", "pointer");
-                if (!d3.select(this).classed("selected") ){
-                var tooltipText ;
-                if (selectedStation.stationId == null) {
-                   tooltipText =
+            d3.select(this).style("cursor", "pointer");
+            if (selectedStation.stationId === null ||
+                  d3.select(this).attr("stationId") != selectedStation.stationId ){
+               var tooltipText ;
+               if (selectedStation.stationId === null) {
+                  tooltipText =
                   "<b>"+d['station name']+"</b><br/>"
                   + (+d.arrivals + d.departures) + " riders" +"<br/>"
                   + "(" + d.arrivals + " arriving, "
@@ -101,27 +93,34 @@ function setUpBubbles() {
       })
       .on("mouseout", function(event, d) {
          hideTooltip();
-         if(!d3.select(this).classed("selected") ) {
-            setMarkerAppearanceUnselected(d3.select(this));
-         } else {
+         if(d3.select(this).attr("stationId") == selectedStation.stationId ) {
             setMarkerAppearanceSelected(d3.select(this));
+         } else {
+            setMarkerAppearanceUnselected(d3.select(this));
          }
       })
       .on("click", function(event, d){
-         if (!d3.select(this).classed("selected") ){
+         // No bubble currently selected, or user selected a different bubble
+         if (selectedStation.stationId === null ||
+               d3.select(this).attr("stationId") != selectedStation.stationId) {
             d3.select(this).classed("selected", true);
-            clearMarkerSelections();
+            if (selectedStation.stationId !== null) {
+               setMarkerAppearanceUnselected(selectedStation.bubble);
+            }
             selectedStation.select(d['station id']);
             hideTooltip();
             computeStationSpecificStats(d['station id']);
             updateMarkersAndLegend();
-        }else{
-           d3.select(this).classed("selected", false);
-           selectedStation.clear();
-           setMarkerAppearanceUnselected(d3.select(this));
-           updateMarkersAndLegend();
-           hideInfobox();
-        }
+         }
+         // User clicked on same bubble
+         else {
+            selectedStation.bubble.classed("selected", false);
+            setMarkerAppearanceUnselected(selectedStation.bubble);
+            selectedStation.clear();
+            updateMarkersAndLegend();
+            hideInfobox();
+         }
+        
     })
     
     addStationMarkers();
