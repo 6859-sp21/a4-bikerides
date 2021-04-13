@@ -49,21 +49,28 @@ function setupLegend(maxValue, nTicks, radiusFn) {
         .join(
             enter => enter
                 .append("circle")
-                .attr("r", radiusFn)
                 .attr("cx", d => centerFn(d)[0])
                 .attr("cy", d => centerFn(d)[1])
-                .attr("fill", "hsla(236, 100%, 87%, 1)")
-                .attr("stroke", "gray")
                 .attr("stroke-width", 1)
+                .call(enter => enter.transition()
+                    .duration(ANIMATION_DURATION)
+                    .attr("fill", "hsla(236, 100%, 87%, 1)")
+                    .attr("stroke", "gray")
+                    .attr("r", radiusFn)
+                )
             ,
             update => update
-                .attr("r", radiusFn)
-                .attr("cx", d => centerFn(d)[0])
-                .attr("cy", d => centerFn(d)[1])
-                .attr("fill", "hsla(236, 100%, 87%, 1)")
-                .attr("stroke", "gray")
-                .attr("stroke-width", 1),
-            exit => exit.remove()
+                .attr("stroke-width", 1)
+                .call(enter => enter.transition()
+                    .duration(ANIMATION_DURATION)
+                    .attr("cx", d => centerFn(d)[0])
+                    .attr("cy", d => centerFn(d)[1])
+                    .attr("r", radiusFn)
+                    .attr("fill", "hsla(236, 100%, 87%, 1)")
+                    .attr("stroke", "gray")
+                )
+            ,
+            exit => exit.transition().duration(ANIMATION_DURATION).remove()
         )
 
 
@@ -104,13 +111,14 @@ function setupLegend(maxValue, nTicks, radiusFn) {
                 .attr("stroke-dasharray", 4)
             ,
             update => update
+                .attr("stroke", "gray")
+                .attr("stroke-width", 1.5)
+                .attr("stroke-dasharray", 4)
                 .attr("x1", baseX)
                 .attr("y1", d => radiusFn(d) * 2)
                 .attr("x2", labelX - 3)
                 .attr("y2", d => radiusFn(d) * 2)
-                .attr("stroke", "gray")
-                .attr("stroke-width", 1.5)
-                .attr("stroke-dasharray", 4),
+            ,
             exit => exit.remove()
         )
 
