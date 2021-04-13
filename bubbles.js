@@ -4,8 +4,8 @@
 function setMarkerAppearanceSelected(marker) {
    marker
       .attr("stroke","black")
-      .attr("stroke-width", 4)
-      .attr("fill-opacity", 0.8);
+      .attr("stroke-width", 5)
+      //.attr("fill-opacity", 0.8);
 }
 
 function setMarkerAppearanceHover(marker) {

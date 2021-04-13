@@ -3,7 +3,7 @@
 
 <head>
    <meta charset="utf-8">
-   <title>Pulse of the City | Blue Bikes </title>
+   <title>Pulse of the City | Bluebikes </title>
    <script src="https://d3js.org/d3.v6.js"></script>
 
    <script src="https://d3js.org/d3-voronoi.v1.min.js"></script>
@@ -23,6 +23,10 @@
    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.53.1/mapbox-gl.css' rel='stylesheet' />
 
    <style>
+      #visOptions {
+         padding-bottom: 10px;
+      }
+   
       #infoBoxIncomingHisto {
          margin: auto;
       }
@@ -100,7 +104,8 @@
          font-size: 0.9em;
          fill-opacity: 0.9;
          position: absolute;
-         width: 20%;
+         min-width:250px;
+         width: 15%;
          top: 10px;
          right: 0;
          padding: 10px;
@@ -156,7 +161,7 @@
       <div class="map-overlay-left-inner">
          <button type="button" class="map-overlay-left-inner" id="overlay-collapsible"
             onclick="toggleCollapsibleOverlay()" style="float:right">+/-</button>
-         <h3>Pulse of the City | Blue Bikes </h3>
+         <h3>Pulse of the City | Bluebikes </h3>
          <div id="overlay-collapsible-content" style="display:block">
             <p> Bluebikes is Metro Boston's public bike share program, with more than 1,800 bikes at over 200 stations
                across Boston, Brookline, Cambridge, Somerville and Everett.
@@ -176,38 +181,38 @@
 
    <div class="map-overlay-right">
       <div class="map-overlay-right-inner">
-         <h4><label id="slider-time-val"></label></h4>
+         <h3><label id="slider-time-val"></label></h3>
          <input id="slider" type="range" min="0" max="1440" value="720">
          <label id="slider-trip-count"></label>
          <div id="vis">
             <button id="play-button">Play</button>
          </div>
       </div>
-      <div class="map-overlay-right-inner">
-         <button onclick="resetViews()" style="float:right">Reset views</button>
-         <h6>Visualization options</h6>
+      <div class="map-overlay-right-inner" id="visOptions">
+         <div><h6>Visualization options</h6>
+         <button onclick="resetViews()" style="display:block">Reset views</button><br/></div>
          <div display=block>
-            <label for="visualizationSettingsBubbleSize">Bubble size:</label>
+            <label for="visualizationSettingsBubbleSize">Bubble size:
             <select id="visualizationSettingsBubbleSize">
                <option value="uniform">Uniform</option>
                <option value="trafficVolume" selected="selected">Traffic volume</option>
                <!-- <option value="tripLength">Average trip length</option> -->
                <option value="off">Off</option>
-            </select>
+            </select></label>
          </div>
-         <div display=block><label for="visualizationSettingsBubbleColor">Bubble color:</label>
+         <div display=block><label for="visualizationSettingsBubbleColor">Bubble color:
             <select id="visualizationSettingsBubbleColor">
                <option value="off">Neutral</option>
                <option value="trafficVolume" selected="selected">Traffic volume</option>
                <option value="trafficArriveDepart" selected="selected">Traffic flow</option>
-            </select>
+            </select></label>
          </div>
-         <div display=block><label for="visualizationSettingsHeatmapColor">Heatmap:</label>
+         <div display=block><label for="visualizationSettingsHeatmapColor">Heatmap:
             <select id="visualizationSettingsHeatmapColor">
                <option value="off">Off</option>
                <option value="trafficVolume" selected="selected">Traffic volume</option>
                <option value="trafficArriveDepart" selected="selected">Traffic flow</option>
-            </select>
+            </select></label><br/>
          </div>
          <svg id="legend" height=50 width=150></svg>
          <svg id="legendColorTrafficVolume" height=50 width=150></svg>
