@@ -226,7 +226,7 @@
       const BUBBLE_COLOR_DEFAULT = "#808080";
       const HEATMAP_COLOR_DEFAULT = "hsla(0, 0%, 0%, 0.0)";
 
-      const TRIP_DURATION_DISCARD = 6 * 60 * 60 // in seconds
+      const TRIP_DURATION_DISCARD = 3 * 60 * 60 // in seconds
 
       var tripsData, stationData;
 
@@ -421,6 +421,104 @@
          })
       }
 
+      function setupInfoboxTripLengthHistogram(data, averageTripLength) {
+         console.log("setupInfoboxHisto() called with ", data)
+
+         // convert data to minutes
+         data = data.map(d => d / 60)
+         averageTripLength /= 60
+         var margin = { top: 20, right: 30, bottom: 30, left: 40 },
+            width = 300 - margin.left - margin.right,
+            height = 200 - margin.top - margin.bottom;
+
+         // Followed the guide here: https://www.d3-graph-gallery.com/graph/histogram_basic.html
+         var svg = d3.select("#infoBoxHisto")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform",
+               "translate(" + margin.left + "," + margin.top + ")")
+
+         var x = d3.scaleLinear()
+            .domain([0, d3.max(data)])
+            .range([0, width])
+
+         svg.append("g")
+            .attr("transform", "translate(0, " + height + ")")
+            .call(d3.axisBottom(x))
+
+         var histogram = d3.histogram()
+            .value((d) => d)
+            .domain(x.domain())
+            .thresholds(x.ticks(15))
+
+         var bins = histogram(data)
+
+         var maxBinCount = d3.max(bins, (d) => d.length)
+
+         var y = d3.scaleLinear()
+            .range([height, 0])
+         y.domain([0, maxBinCount])
+         svg.append("g")
+            .call(d3.axisLeft(y))
+
+         svg.selectAll("rect")
+            .data(bins)
+            .enter()
+            .append("rect")
+            .attr("x", d => x(d.x0))
+            .attr("width", function (d) { return x(d.x1) - x(d.x0) - 1; })
+            .style("fill", "#88D840")
+            .attr("height", 0)
+            .attr("y", y(0))
+            .transition().duration(ANIMATION_DURATION)
+            .attr("y", d => y(d.length))
+            .attr("height", function (d) { return height - y(d.length); })
+            .delay((d, i) => (i*50))
+
+         // Add line to show average length
+         svg.append("line")
+            .attr("x1", x(averageTripLength))
+            .attr("y1", 0)
+            .attr("x2", x(averageTripLength))
+            .attr("y2", height)
+            .attr("stroke", "red")
+            .attr("stroke-width", 2)
+            // .attr("stroke-dasharray", 4)
+
+         svg.append("text")
+            .attr("transform",
+               "translate(" + (x(averageTripLength)) + " ," +
+               (-10) + ")")
+            .style("text-anchor", "middle")
+            .style("font-size", "smaller")
+            .style("font-weight", "bold")
+            .style("color", "red")
+            .text(`${Math.round(averageTripLength)} min`);
+
+         // Add axis labels
+         // Guidance: https://bl.ocks.org/d3noob/23e42c8f67210ac6c678db2cd07a747e
+         svg.append("text")
+            .attr("transform",
+               "translate(" + (width / 2) + " ," +
+               (height + margin.top + 20) + ")")
+            .style("text-anchor", "middle")
+            .style("font-size", "smaller")
+            .text("minutes");
+
+         svg.append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", 0 - margin.left)
+            .attr("x", 0 - (height / 2))
+            .attr("dy", "1em")
+            .style("text-anchor", "middle")
+            .style("font-size", "smaller")
+            .text("# rides");
+
+
+      }
+
       function showInfobox() {
          collapsible = document.getElementById("overlay-collapsible-content");
          collapsible.style.display = "none";
@@ -447,8 +545,14 @@
             + "%)<br/>" + (trafficVolume - selectedStation.data.subscribers) + " casual users"
             + " (" + ((trafficVolume - selectedStation.data.subscribers) / trafficVolume * 100).toFixed(2)
             + "%)</p>";
-         content.innerHTML += "<p> Average trip duration: " + Math.round(selectedStation.data.avgTripDuration / 60) + " min."
+         content.innerHTML += "<p> Mean length of incoming ride: " + Math.round(selectedStation.data.avgTripDuration / 60) + " min."
             + "</br><small>(excluding trips longer than " + Math.round(TRIP_DURATION_DISCARD / 60 / 60) + " hrs.)</small></p>";
+
+         content.innerHTML += "<div id='infoBoxHisto'></div>";
+
+
+
+         setupInfoboxTripLengthHistogram(selectedStation.data.tripDurations, selectedStation.data.avgTripDuration)
 
          console.log("Selected station data: ", selectedStation.data)
       }
@@ -459,8 +563,8 @@
       }
 
       function computeAllStationStats() {
-         let arrivals = {}, departures = {}, tripDuration = {},
-            males = {}, females = {}, age = {}, subscribers = {}, tripDurationSum = {}, tripDurationCount = {};
+         let arrivals = {}, departures = {},
+            males = {}, females = {}, age = {}, subscribers = {}, durationOfTrips = {}, tmp = [];
          document.getElementById('slider-trip-count').textContent =
             tripsData.length + " trips in this time window.";
 
@@ -519,32 +623,38 @@
                }
             }
 
-            let tripDuration = parseInt(tripsData[i]['tripduration'])
+            let tripDuration = (tripsData[i]['tripduration'])
+            let endStationID = tripsData[i]['end station id']
 
             if (tripDuration < TRIP_DURATION_DISCARD) {
-               if (!isNaN(tripDurationSum[tripsData[i]['end station id']])) {
-                  tripDurationSum[tripsData[i]['end station id']] += parseInt(tripsData[i]['tripduration'])
-                  tripDurationCount[tripsData[i]['end station id']] += 1
-               }
-               else {
-                  tripDurationSum[tripsData[i]['end station id']] = parseInt(tripsData[i]['tripduration'])
-                  tripDurationCount[tripsData[i]['end station id']] = 1
+               if (tripDuration != null) {
+
+                  if (durationOfTrips[endStationID] == null) {
+                     durationOfTrips[endStationID] = ""
+                  }
+
+                  durationOfTrips[endStationID] += " " + tripDuration
                }
             }
 
          }
          stationData.forEach(function (d) {
-            d.arrivals = arrivals[d['station id']] || 0;
-            d.departures = departures[d['station id']] || 0;
-            d.males = males[d['station id']] || 0;
-            d.females = females[d['station id']] || 0;
-            d.subscribers = subscribers[d['station id']] || 0;
+            stationID = d['station id']
 
-            if (!isNaN(tripDurationSum[d['station id']] && !isNaN(arrivals[d['station id']]))) {
-               d.avgTripDuration = tripDurationSum[d['station id']] / arrivals[d['station id']]
-            } else {
-               d.avgTripDuration = 0
-            }
+            d.arrivals = arrivals[stationID] || 0;
+            d.departures = departures[stationID] || 0;
+            d.males = males[stationID] || 0;
+            d.females = females[stationID] || 0;
+            d.subscribers = subscribers[stationID] || 0;
+
+            let tripDurationString = durationOfTrips[stationID] || ""
+            d.tripDurations = tripDurationString.split(' ').map(s => parseInt(s))
+            d.tripDurations = d.tripDurations.filter(v => !isNaN(v))
+
+            console.log("trip durations: ", d.tripDurations)
+            console.log("expected number of entries: ", arrivals[stationID])
+
+            d.avgTripDuration = d.tripDurations.reduce((accumulator, currentValue) => accumulator + currentValue, 0) / d.tripDurations.length
 
             // Too slow and inefficient:
             //d.arrivals = tripsData.filter(trip => (trip['end station id'] == d['station id'])).length;
@@ -660,7 +770,7 @@
          else {
             let maxTraffic = Math.max(...stationData.map(o => (o.specificArrivals + o.specificDepartures)), 0);
 
-            
+
             console.log("selected station: ", selectedStation)
             let stationsMinusSelected = stationData.filter(d => d["station id"] != selectedStation.stationId)
             console.log("stationsMinusSelected: ", stationsMinusSelected)
