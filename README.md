@@ -10,9 +10,10 @@ We then decided on our final product to be an interactive map-based tool that al
 <b> Rationale for Design Decisions </b><br>
 Since the data was spatial in nature, we definitely had to have a mapbase - and started off with that.
 The next natural thing was then to map out the stations' location. We used a bubble viz for that as the data was a <i>point</i> data then scaled the bubbles according to size of trips which reflected total number of trips in the day (arriving + leaving the station). We also used the same data as a heatmap which allows visual representation of size of flows around the stations. 
+Some nuanced edits included how and what text were included to explain our visualisation. 
 
 <b> Commentary on the development process </b><br>
-The team took a while to get used to d3.js as it was new to all of us. Kloe managed to figure out the mapbase, and Kai was most up to speed with picking up d3, and started many of the initial mappings onto the map. Brandon was in charge of the heatmap and the team iteratively made changes/edits as and when and communicated via a personal slack channel. Changes along the way also included making code more efficient, and changing things like colour etc. After we managed to make the MVP work with a list of things we had in mind (mapping stations arrival and departure), we started adding more interactive features that would allow more insights into the data. For example, the slider allows users to explore specific time of the day + specific stations they are interested in. We then added a 'play button' as an alternative for users who wanted an automated heat map. We also added a histogram. <br>
+The team took a while to get used to d3.js as it was new to all of us. Kloe managed to figure out the mapbase, and Kai was most up to speed with picking up d3, and started many of the initial mappings onto the map. Brandon was in charge of the heatmap and the team iteratively made changes/edits as and when and communicated via a personal slack channel. Changes along the way also included making code more efficient, and changing things like colour etc. After we managed to make the MVP work with a list of things we had in mind (mapping stations arrival and departure), we started adding more interactive features that would allow more insights into the data. For example, the slider allows users to explore specific time of the day + specific stations they are interested in. We then added a 'play button' as an alternative for users who wanted an automated map depicting flows. We also added a histogram. <br>
 
 
 <b> Some interesting things to explore with our visualisation </b>
@@ -25,11 +26,13 @@ The team took a while to get used to d3.js as it was new to all of us. Kloe mana
 Pan and zoom around the map to explore. Bike stations are represented with bubbles. Click on a station to view all the traffic originating or terminating at the selected station, and its relationship with other stations. Drag the slider on the top right to move across different times of day (or use the play button to advance automatically). Finally, use the visualization options on the right for more advanced customizations.
 
 <b> Data Source + Time taken developing visualisation </b><br>
+The team took an estimated of 10 hours/person working on this project. One hurdle was understanding how maps and projections worked, and much time was spent fixing code bugs.
 
 
 <b> Reference Code Source/Inspiration (Also credited in Code base) </b><br>
 Slider: https://bl.ocks.org/johnwalley/e1d256b81e51da68f7feb632a53c3518<br>
 Heatmap/Timeslice: https://observablehq.com/@mbostock/u-s-airports-voronoi
+Source for BlueBikes data: https://www.bluebikes.com/system-data
 
 
 
