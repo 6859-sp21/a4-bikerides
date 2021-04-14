@@ -8,6 +8,9 @@ The team was fundamentally interested in the Bluebikes Data, which reports bikes
 We then decided on our final product to be an interactive map-based tool that allows users to click on different variables to explore.
 
 <b> Rationale for Design Decisions </b><br>
+Since the data was spatial in nature, we definitely had to have a mapbase - and started off with that.
+The next natural thing was then to map out the stations' location. We used a bubble viz for that as the data was a <i>point</i> data then scaled the bubbles according to size of trips which reflected total number of trips in the day (arriving + leaving the station). We also used the same data as a heatmap which allows visual representation of size of flows around the stations. 
+
 How did you choose your particular visual encodings, interaction, and animation techniques? 
 What alternatives did you consider and how did you arrive at your ultimate choices?
 An overview of your development process. Describe how the work was split among the team members. 
@@ -20,7 +23,7 @@ An overview of your development process. Describe how the work was split among t
 <li> How does the commuting direction change over the course of a day? </li>
 <li> What time do people leave class or work? </li>
 <li> Do rush hour trips really take longer? </li>
-<li> Where do students go at 3am? </li>
+<li> Where do students go at 3am? </li><br>
 
 <b> Using our visualisation </b><br>
 Pan and zoom around the map to explore. Bike stations are represented with bubbles. Click on a station to view all the traffic originating or terminating at the selected station, and its relationship with other stations. Drag the slider on the top right to move across different times of day (or use the play button to advance automatically). Finally, use the visualization options on the right for more advanced customizations.
@@ -31,6 +34,7 @@ Remember to acknowledge all appropriate sources not just in your write-up but al
 (including the source of your data, and any example visualization you drew inspiration from).
 
 <b> Reference Code Source (Also credited in Code base) </b><br>
+Getting the map base up:
 
 
 
