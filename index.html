@@ -374,25 +374,12 @@
                   } else {
                      moving = true;
                      timer = setInterval(function(e){
-                        if(i==1441){
-                           i = 0;
-                        }
-                        //updateSlider(parseInt(i))
-                        document.getElementById("slider").value = i;
-                        let filterDate = updateSlider(i);
-                        newTripsData = filterTrips(filterDate, FILTER_TIME_WINDOW_HOURS, FILTER_TIME_WINDOW_MINUTES);
-                        tripsData = newTripsData;
-                        computeAllStationStats();
-                        if (selectedStation.stationId == null) {
-                           updateMarkersAndLegend();
-                        }
-                        else {
-                           computeStationSpecificStats(selectedStation.stationId);
-                           updateMarkersAndLegend();
-                           setTimeout(() => { setMarkerAppearanceSelected(selectedStation.bubble) }, 1500);
-                        }
-                        i+=1;
-                     }, 100);
+                      	let slider = d3.select("#slider");
+                        var nextValue = (+slider.property("value") + 30) % (+slider.property("max") + 1);
+                        if (nextValue == 0) { nextValue = +slider.property("min"); }
+                        slider.property("value", nextValue);
+                        handleSliderChange ();
+                      }, 1000);
                      button.text("Pause");
                   }
                   console.log("Slider moving: " + moving);
