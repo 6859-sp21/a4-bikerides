@@ -5,7 +5,7 @@ The team was interested in the flow of bikes, or "pulse" of the city, and used t
 
 <b> Design Decisions </b><br>
 The team was fundamentally interested in the Bluebikes Data, which reports bikeshare trips around Boston, and see if an <i> urban pulse</i> can be noticed via visualisation. 
-We then decided on our final product to be an interactive map-based tool that allows users to click on different variables to explore.
+We then decided on our final product to be an interactive map-based tool that allows users to click on different variables to explore. Instead of having a very specific question (such as how many students use bluebikes at 12am), we decided to build an interactive tool that allowed people to explore that specificity. Hence, the decision was to map out the total arrivals + departures at each station as the default view, and then adding different things for people to explore. When the user hovers over each station, a tooltip will appear, showing the station name and the exact number of arrivals and departures. 
 
 <b> Rationale for Design Decisions </b><br>
 Since the data was spatial in nature, we definitely had to have a mapbase - and started off with that.
