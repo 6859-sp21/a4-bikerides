@@ -33,7 +33,7 @@ The team took an estimated of 10 hours/person working on this project. One hurdl
 
 <b> Reference Code Source/Inspiration (Also credited in Code base) </b><br>
 Slider: https://bl.ocks.org/johnwalley/e1d256b81e51da68f7feb632a53c3518<br>
-Heatmap/Timeslice: https://observablehq.com/@mbostock/u-s-airports-voronoi
+Heatmap/Timeslice: https://observablehq.com/@mbostock/u-s-airports-voronoi <br>
 Source for BlueBikes data: https://www.bluebikes.com/system-data
 
 
