@@ -123,12 +123,12 @@
       #play-button {
          background: #88D840;
          padding-right: 26px;
-         border-radius: 3px;
+         border-radius: 2px;
          border: none;
          color: white;
          margin: 0;
          padding: 0 12px;
-         width: 60px;
+         width: 100px;
          cursor: pointer;
          height: 30px;
       }
@@ -183,7 +183,7 @@
          <input id="slider" type="range" min="1" max="1440" value="720">
          <label id="slider-trip-count"></label>
          <div id="vis">
-            <button onclick="runSlider()">Play/Pause</button>
+            <button id="play-button">Play/Pause</button>
          </div>
       </div>
       <div class="map-overlay-right-inner" id="visOptions">
@@ -361,7 +361,7 @@
                FILTER_TIME_WINDOW_HOURS, FILTER_TIME_WINDOW_MINUTES);
 
             // Automate results via Play button
-            /*var i = 720;
+            var i = 0;
             var playButton = d3.select("#play-button");
             playButton
                .on("click", function () {
@@ -384,11 +384,11 @@
                         tripsData = newTripsData;
                         computeAllStationStats();
                         if (selectedStation.stationId == null) {
-                           updateMarkers();
+                           updateMarkersAndLegend();
                         }
                         else {
                            computeStationSpecificStats(selectedStation.stationId);
-                           updateMarkers();
+                           updateMarkersAndLegend();
                            setTimeout(() => { setMarkerAppearanceSelected(selectedStation.bubble) }, 1500);
                         }
                         i+=1;
@@ -396,7 +396,7 @@
                      button.text("Pause");
                   }
                   console.log("Slider moving: " + moving);
-               })*/
+               })
             // Set up heatmap
             {
                setupHeatmap(stationData, tripsData)
@@ -452,7 +452,7 @@
                ANIMATION_DURATION+500);
          }
       }
-      function runSlider() {
+      /*function runSlider() {
          if (isSliderRunning == false) {
             console.log("playing")
             clearInterval (timer);
@@ -469,7 +469,7 @@
             clearInterval (timer);
             isSliderRunning = false;
          }
-      }
+      }*/
 
       function setupInfoboxTripLengthHistogram(containerSelector1, data1, averageTripLength1, barColor1, containerSelector2, data2, averageTripLength2, barColor2) {
          console.log("setupInfoboxHisto() called with ", data1, data2)
