@@ -1,7 +1,8 @@
 # a4-bikerides
-a4-bikerides created by GitHub Classroom
-
 <b> Design Decisions </b>
+The team was fundamentally interested in the Bluebikes Data, which reports bikeshare trips around Boston, and see if a <i>pulse</i> can be noticed via visualisation. 
+
+
 A rationale for your design decisions. How did you choose your particular visual encodings, interaction, and animation techniques? 
 What alternatives did you consider and how did you arrive at your ultimate choices?
 An overview of your development process. Describe how the work was split among the team members. 
