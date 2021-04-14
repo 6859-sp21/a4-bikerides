@@ -22,7 +22,7 @@ Once we were done with what we initially had in mind, we began adding final touc
 <li> How does the commuting direction change over the course of a day? </li>
 <li> What time do people leave class or work? </li>
 <li> Do rush hour trips really take longer? </li>
-<li> Where do students go at 3am? </li><br>
+<li> Where do students go at 3am? (Look at stations near MIT, Harvard and other education institutions) </li><br>
 
 <b> Using our visualisation </b><br>
 Pan and zoom around the map to explore. Bike stations are represented with bubbles. Click on a station to view all the traffic originating or terminating at the selected station, and its relationship with other stations. Drag the slider on the top right to move across different times of day (or use the play button to advance automatically). Finally, use the visualization options on the right for more advanced customizations.
