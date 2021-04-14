@@ -163,12 +163,10 @@
             onclick="toggleCollapsibleOverlay()" style="float:right">+/-</button>
          <h3>Pulse of the City | Bluebikes </h3>
          <div id="overlay-collapsible-content" style="display:block">
-            <p> Bluebikes is Metro Boston's public bike share program, with more than 1,800 bikes at over 200 stations
-               across Boston, Brookline, Cambridge, Somerville and Everett.
-               Bluebikes is owned by the municipalities of Boston, Brookline, Cambridge, Somerville and Everett, and
-               operated by Motivate.
-               The team was interested in shared bikeflows, and the December 2019 data published by Bluebikes are used
-               to visualize this map. </p>
+            <p> Bluebikes is Metro Boston's public bike share program, with more than 1,800 bikes at
+            over 200 stations across Greater Boston. The team was interested in the flow of bikes, or "pulse" of the city, and used the December 2019 data published by Bluebikes.</p>
+            <p><b>Pan and zoom around</b> the map to explore. Bike stations are represented with bubbles. <b>Click on a station</b> to view all the traffic originating or terminating at the selected station, and its relationship with other stations. <b>Drag the slider</b> on the top right to move across different times of day (or use the play button to advance automatically). Finally, use the <b>visualization options</b> on the right for more advanced customizations.</p>
+            <p>Some fun things to explore: How does the commuting direction change over the course of a day? What time do people leave class or work? Do rush hour trips really take longer? Where do students go at 3am?</p>
          </div>
          <p style="font-size:0.8em">Data source: <a href="https://www.bluebikes.com/system-data">Bluebikes</a> by
             Motivate</p>
@@ -182,10 +180,10 @@
    <div class="map-overlay-right">
       <div class="map-overlay-right-inner">
          <h3><label id="slider-time-val"></label></h3>
-         <input id="slider" type="range" min="0" max="1440" value="720">
+         <input id="slider" type="range" min="1" max="1440" value="720">
          <label id="slider-trip-count"></label>
          <div id="vis">
-            <button id="play-button">Play</button>
+            <button onclick="runSlider()">Play/Pause</button>
          </div>
       </div>
       <div class="map-overlay-right-inner" id="visOptions">
@@ -233,6 +231,7 @@
       const TRIP_DURATION_DISCARD = 2 * 60 * 60 // in seconds
 
       var tripsData, stationData;
+      var timer = 0, isSliderRunning = false;
 
       var selectedStation = {
          select(stationId) {
@@ -362,7 +361,7 @@
                FILTER_TIME_WINDOW_HOURS, FILTER_TIME_WINDOW_MINUTES);
 
             // Automate results via Play button
-            var playButton = d3.select("#play-button");
+            /*var playButton = d3.select("#play-button");
             playButton
                .on("click", function () {
                   var button = d3.select(this);
@@ -377,7 +376,7 @@
                      button.text("Pause");
                   }
                   console.log("Slider moving: " + moving);
-               })
+               })*/
 
             // Set up heatmap
             {
@@ -419,7 +418,8 @@
          return sliderTime;
       }
       function handleSliderChange(e) {
-         let filterDate = updateSlider(parseInt(e.target.value));
+         //let filterDate = updateSlider(parseInt(e.target.value));
+         let filterDate = updateSlider(parseInt(document.getElementById("slider").value));
          newTripsData = filterTrips(filterDate, FILTER_TIME_WINDOW_HOURS, FILTER_TIME_WINDOW_MINUTES);
          tripsData = newTripsData;
          computeAllStationStats();
@@ -431,6 +431,24 @@
             updateMarkersAndLegend();
             setTimeout(() => { setMarkerAppearanceSelected(selectedStation.bubble) },
                ANIMATION_DURATION+500);
+         }
+      }
+      function runSlider() {
+         if (isSliderRunning == false) {
+            console.log("playing")
+            clearInterval (timer);
+            isSliderRunning = true;
+         	timer = setInterval (function() {
+             	let slider = d3.select("#slider");
+               var nextValue = (+slider.property("value") + 30) % (+slider.property("max") + 1);
+               if (nextValue == 0) { nextValue = +slider.property("min"); }
+               slider.property("value", nextValue);
+               handleSliderChange ();
+             }, 1000);
+         }
+         else {
+            clearInterval (timer);
+            isSliderRunning = false;
          }
       }
 
