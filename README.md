@@ -11,6 +11,9 @@ An overview of your development process. Describe how the work was split among t
 <b> Commentary on the development process </b><br>
 
 
+
+<b> Some interesting findings from our visualisation  </b><br>
+
 <b> Data Source </b><br>
 Roughly how much time did you spend developing your application (in people-hours)? What aspects took the most time?
 Remember to acknowledge all appropriate sources not just in your write-up but also directly on your visualization itself 
