@@ -361,7 +361,8 @@
                FILTER_TIME_WINDOW_HOURS, FILTER_TIME_WINDOW_MINUTES);
 
             // Automate results via Play button
-            /*var playButton = d3.select("#play-button");
+            /*var i = 720;
+            var playButton = d3.select("#play-button");
             playButton
                .on("click", function () {
                   var button = d3.select(this);
@@ -372,12 +373,30 @@
                      button.text("Play");
                   } else {
                      moving = true;
-                     timer = setInterval(step, 100);
+                     timer = setInterval(function(e){
+                        if(i==1441){
+                           i = 0;
+                        }
+                        //updateSlider(parseInt(i))
+                        document.getElementById("slider").value = i;
+                        let filterDate = updateSlider(i);
+                        newTripsData = filterTrips(filterDate, FILTER_TIME_WINDOW_HOURS, FILTER_TIME_WINDOW_MINUTES);
+                        tripsData = newTripsData;
+                        computeAllStationStats();
+                        if (selectedStation.stationId == null) {
+                           updateMarkers();
+                        }
+                        else {
+                           computeStationSpecificStats(selectedStation.stationId);
+                           updateMarkers();
+                           setTimeout(() => { setMarkerAppearanceSelected(selectedStation.bubble) }, 1500);
+                        }
+                        i+=1;
+                     }, 100);
                      button.text("Pause");
                   }
                   console.log("Slider moving: " + moving);
                })*/
-
             // Set up heatmap
             {
                setupHeatmap(stationData, tripsData)
