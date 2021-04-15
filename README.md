@@ -1,4 +1,4 @@
-# a4-bikerides
+# Pulse of the City
 <b> About the Data </b><br>
 Bluebikes is Metro Boston's public bike share program, with more than 1,800 bikes at over 200 stations across Greater Boston. 
 The team was interested in the flow of bikes, or "pulse" of the city, and used the December 2019 data published by Bluebikes.
